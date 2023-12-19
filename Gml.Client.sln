@@ -1,0 +1,43 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "common", "common", "{7A99386A-7F25-4E73-A5B6-2745FD91FF1A}"
+	ProjectSection(SolutionItems) = preProject
+		.gitignore = .gitignore
+		.editorconfig = .editorconfig
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{1971E36C-1499-4FC5-8CBF-8D40A87FF938}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "tests", "tests", "{9FBDB12F-887C-4D09-9B02-BF9752016A4E}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Gml.Client", "src\Gml.Client\Gml.Client.csproj", "{7F5FBB16-B6B2-4415-9027-71C59F436D61}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Gml.Client.Tests", "tests\Gml.Client.Tests\Gml.Client.Tests.csproj", "{F5A8A33B-302D-400D-A24F-1C3401E8C8C2}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Gml.WebApi.Models", "src\Gml.WebApi.Models\Gml.WebApi.Models.csproj", "{45EE5FCD-4BCE-47F6-AB8C-81D1735601E7}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{7F5FBB16-B6B2-4415-9027-71C59F436D61}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{7F5FBB16-B6B2-4415-9027-71C59F436D61}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{7F5FBB16-B6B2-4415-9027-71C59F436D61}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{7F5FBB16-B6B2-4415-9027-71C59F436D61}.Release|Any CPU.Build.0 = Release|Any CPU
+		{F5A8A33B-302D-400D-A24F-1C3401E8C8C2}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{F5A8A33B-302D-400D-A24F-1C3401E8C8C2}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{F5A8A33B-302D-400D-A24F-1C3401E8C8C2}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{F5A8A33B-302D-400D-A24F-1C3401E8C8C2}.Release|Any CPU.Build.0 = Release|Any CPU
+		{45EE5FCD-4BCE-47F6-AB8C-81D1735601E7}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{45EE5FCD-4BCE-47F6-AB8C-81D1735601E7}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{45EE5FCD-4BCE-47F6-AB8C-81D1735601E7}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{45EE5FCD-4BCE-47F6-AB8C-81D1735601E7}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{7F5FBB16-B6B2-4415-9027-71C59F436D61} = {1971E36C-1499-4FC5-8CBF-8D40A87FF938}
+		{F5A8A33B-302D-400D-A24F-1C3401E8C8C2} = {9FBDB12F-887C-4D09-9B02-BF9752016A4E}
+		{45EE5FCD-4BCE-47F6-AB8C-81D1735601E7} = {1971E36C-1499-4FC5-8CBF-8D40A87FF938}
+	EndGlobalSection
+EndGlobal
