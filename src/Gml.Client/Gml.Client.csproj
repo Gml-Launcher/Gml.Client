@@ -14,7 +14,7 @@
     </ItemGroup>
 
     <ItemGroup>
-      <ProjectReference Include="..\Gml.WebApi.Models\Gml.WebApi.Models.csproj" />
+      <ProjectReference Include="..\..\..\Gml.WebApi.Models\Gml.WebApi.Models.csproj" />
     </ItemGroup>
 
     <ItemGroup>
