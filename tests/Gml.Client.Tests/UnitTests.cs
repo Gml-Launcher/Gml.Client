@@ -7,13 +7,13 @@ namespace Gml.Client.Tests;
 public class Tests
 {
     private IGmlClientManager Client { get; set; }
-    
+
     [SetUp]
     public void Setup()
     {
         var localDirectory = "C:\\Users\\aa.terentiev\\AppData\\Roaming\\AztexClient";
         var baseAddress = "http://localhost:5000";
-        
+
         Client = new GmlClientManager(baseAddress, localDirectory);
 
         Client.ProgressChanged += (sender, args) =>
@@ -27,7 +27,7 @@ public class Tests
     public async Task GetClientsList()
     {
         var clients = await Client.GetProfiles();
-        
+
         Assert.That(clients, Is.Not.Null);
     }
 
@@ -47,7 +47,7 @@ public class Tests
             UserName = "GamerVII",
             UserUuid = "31f5f477-53db-4afd-b88d-2e01815f4887"
         });
-        
+
         Assert.That(clients, Is.Not.Null);
     }
 
@@ -67,7 +67,7 @@ public class Tests
             UserName = "GamerVII",
             UserUuid = "31f5f477-53db-4afd-b88d-2e01815f4887"
         };
-        
+
         var profileInfo = await Client.GetProfileInfo(localProfile);
 
         await Client.DownloadNotInstalledFiles(profileInfo);
@@ -78,7 +78,7 @@ public class Tests
     {
         var localProfile = new ProfileCreateInfoDto
         {
-            ClientName = "GamerTech",
+            ClientName = "AztexCraft",
             GameAddress = "207.180.231.31",
             GamePort = 25565,
             RamSize = 4096,
@@ -91,15 +91,15 @@ public class Tests
             UserName = "GamerVII",
             UserUuid = "sergsecgrfsecgriseuhcygrshecngrysicugrbn7csewgrfcsercgser"
         };
-        
+
         var profileInfo = await Client.GetProfileInfo(localProfile);
 
         if (profileInfo != null)
         {
             await Client.DownloadNotInstalledFiles(profileInfo);
-            
+
             var process = await Client.GetProcess(localProfile);
-            
+
             var p = new ProcessUtil(process);
             p.OutputReceived += (s, e) => Console.WriteLine(e);
             p.StartWithEvents();

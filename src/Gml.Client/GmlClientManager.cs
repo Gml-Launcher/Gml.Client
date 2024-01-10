@@ -81,13 +81,13 @@ public class GmlClientManager : IGmlClientManager
             _installationDirectory + @"\clients\" + profileDto.ProfileName);
 
         var process = new Process();
-        
+
         process.StartInfo = new ProcessStartInfo()
         {
             FileName = $"C:\\Users\\aa.terentiev\\AppData\\Roaming\\AztexClient\\clients\\{profile.ClientName}\\runtime\\java-runtime-gamma\\bin\\javaw.exe",
             Arguments = arguments,
         };
-        
+
         return process;
     }
 
@@ -97,10 +97,11 @@ public class GmlClientManager : IGmlClientManager
 
         foreach (var downloadingFile in profileInfo.Files)
         {
-            if (profileInfo.WhiteListFiles.Count > 0 && profileInfo.WhiteListFiles.Any(c => c.Directory == downloadingFile.Directory))
-                continue;
-            
             var localPath = _installationDirectory + downloadingFile.Directory;
+
+            if (profileInfo.WhiteListFiles.Count > 0 && profileInfo.WhiteListFiles.Any(c => c.Directory == downloadingFile.Directory) && File.Exists(localPath))
+                continue;
+
 
             if (File.Exists(localPath) == false || SystemHelper.CalculateFileHash(localPath, new SHA256Managed()) != downloadingFile.Hash)
             {
@@ -114,7 +115,7 @@ public class GmlClientManager : IGmlClientManager
     public async Task DownloadNotInstalledFiles(ProfileInfoReadDto profileInfo)
     {
         var updateFiles = await FindErroneousFiles(profileInfo);
-        
+
         await DownloadFiles(updateFiles, 64);
     }
 
