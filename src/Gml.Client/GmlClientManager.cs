@@ -73,22 +73,21 @@ public class GmlClientManager : IGmlClientManager
         await Task.WhenAll(downloadTasks);
     }
 
-    public async Task<Process> GetProcess(ProfileCreateInfoDto profile)
+    public Task<Process> GetProcess(ProfileInfoReadDto profileDto)
     {
-        var profileDto = await GetProfileInfo(profile);
+        var profilePath = _installationDirectory + @"\clients\" + profileDto.ProfileName;
 
-        var arguments = profileDto!.Arguments.Replace("{localPath}",
-            _installationDirectory + @"\clients\" + profileDto.ProfileName);
+        var arguments = profileDto!.Arguments.Replace("{localPath}",profilePath);
 
         var process = new Process();
 
         process.StartInfo = new ProcessStartInfo()
         {
-            FileName = $"C:\\Users\\aa.terentiev\\AppData\\Roaming\\AztexClient\\clients\\{profile.ClientName}\\runtime\\java-runtime-gamma\\bin\\javaw.exe",
+            FileName = profileDto.JavaPath.Replace("{localPath}",profilePath),
             Arguments = arguments,
         };
 
-        return process;
+        return Task.FromResult(process);
     }
 
     public Task<IEnumerable<LocalFileInfoDto>> FindErroneousFiles(ProfileInfoReadDto profileInfo)

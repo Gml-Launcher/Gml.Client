@@ -10,6 +10,6 @@ public interface IGmlClientManager
     Task<IEnumerable<ReadProfileDto>> GetProfiles();
     Task<ProfileInfoReadDto?> GetProfileInfo(ProfileCreateInfoDto profileCreateInfoDto);
     Task DownloadFiles(IEnumerable<LocalFileInfoDto> files, int loadFilesPartCount);
-    Task<Process> GetProcess(ProfileCreateInfoDto profileName);
+    public Task<Process> GetProcess(ProfileInfoReadDto profileDto);
     Task DownloadNotInstalledFiles(ProfileInfoReadDto profileInfo);
 }
