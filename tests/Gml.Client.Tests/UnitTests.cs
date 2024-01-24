@@ -12,7 +12,7 @@ public class Tests
     public void Setup()
     {
         var localDirectory = "C:\\Users\\aa.terentiev\\AppData\\Roaming\\AztexClient";
-        var baseAddress = "https://localhost:5000";
+        var baseAddress = "http://localhost:5000";
 
         Client = new GmlClientManager(baseAddress, localDirectory);
 
@@ -78,10 +78,10 @@ public class Tests
     {
         var localProfile = new ProfileCreateInfoDto
         {
-            ClientName = "Hitech",
+            ClientName = "1201",
             GameAddress = "207.180.231.31",
             GamePort = 25565,
-            RamSize = 4096,
+            RamSize = 8192,
             IsFullScreen = false,
             OsType = (int)OsType.Windows,
             OsArchitecture = Environment.Is64BitOperatingSystem ? "64" : "32",
@@ -97,8 +97,11 @@ public class Tests
             await Client.DownloadNotInstalledFiles(profileInfo);
 
             var process = await Client.GetProcess(profileInfo);
-
-            process.Start();
+            var p = new ProcessUtil(process);
+            p.OutputReceived += (s, e) => Console.WriteLine(e);
+            p.StartWithEvents();
+            await p.WaitForExitTaskAsync();
+            // process.Start();
         }
 
     }

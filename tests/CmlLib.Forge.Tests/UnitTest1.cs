@@ -13,6 +13,39 @@ public class Tests
     {
     }
 
+
+    [Test]
+    public async Task Test2() {
+        System.Net.ServicePointManager.DefaultConnectionLimit = 256;
+
+        var path = new MinecraftPath();
+        var launcher = new CMLauncher(path);
+
+        launcher.FileChanged += (e) =>
+        {
+            Console.WriteLine("FileKind: " + e.FileKind.ToString());
+            Console.WriteLine("FileName: " + e.FileName);
+            Console.WriteLine("ProgressedFileCount: " + e.ProgressedFileCount);
+            Console.WriteLine("TotalFileCount: " + e.TotalFileCount);
+        };
+        launcher.ProgressChanged += (s, e) =>
+        {
+            Console.WriteLine("{0}%", e.ProgressPercentage);
+        };
+
+        var versions = await launcher.GetAllVersionsAsync();
+        foreach (var v in versions)
+        {
+            Console.WriteLine(v.Name);
+        }
+
+        var process = await launcher.CreateProcessAsync("1.19.2", new MLaunchOption
+        {
+            MaximumRamMb = 2048,
+            Session = MSession.GetOfflineSession("hello123"),
+        });
+    }
+
     [Test]
     public async Task Test1()
     {
@@ -28,7 +61,7 @@ public class Tests
         forge.InstallerOutput += (s, e) => Console.WriteLine(e);
 
 // Install the best forge for specific minecraft version
-        var versionName = await forge.Install("1.7.10");
+        var versionName = await forge.Install("1.20.1");
 
 // Install with specific forge version
 // var versionName = await forge.Install("1.20.1", "47.0.35");

@@ -83,8 +83,8 @@ public class GmlClientManager : IGmlClientManager
 
         process.StartInfo = new ProcessStartInfo()
         {
-            FileName = profileDto.JavaPath.Replace("{localPath}",profilePath),
-            Arguments = arguments,
+            FileName = profileDto.JavaPath.Replace("{localPath}",profilePath).Replace("/", "\\"),
+            Arguments = arguments.Replace("/", "\\"),
         };
 
         return Task.FromResult(process);
