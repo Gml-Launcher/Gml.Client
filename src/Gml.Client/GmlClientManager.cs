@@ -29,12 +29,16 @@ public class GmlClientManager : IGmlClientManager
 
     public async Task<IEnumerable<ReadProfileDto>> GetProfiles()
     {
+        Console.Write("Load profiles: ");
         var response = await _httpClient.GetAsync("/api/profiles");
+
+        Console.WriteLine(response.IsSuccessStatusCode ? "Success load" : "Failed load");
 
         if (!response.IsSuccessStatusCode)
             return Enumerable.Empty<ReadProfileDto>();
 
         var content = await response.Content.ReadAsStringAsync();
+
 
         return JsonConvert.DeserializeObject<List<ReadProfileDto>>(content)
                ?? Enumerable.Empty<ReadProfileDto>();
