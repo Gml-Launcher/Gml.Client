@@ -11,6 +11,9 @@
       <Compile Update="GmlClientManager.cs">
         <DependentUpon>IGmlClientManager.cs</DependentUpon>
       </Compile>
+      <Compile Update="Models\AuthUser.cs">
+        <DependentUpon>IUser.cs</DependentUpon>
+      </Compile>
     </ItemGroup>
 
     <ItemGroup>

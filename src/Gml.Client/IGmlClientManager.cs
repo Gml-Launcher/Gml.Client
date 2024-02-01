@@ -1,5 +1,6 @@
 using System.ComponentModel;
 using System.Diagnostics;
+using Gml.Client.Models;
 using Gml.WebApi.Models.Dtos.Profiles;
 
 namespace Gml.Client;
@@ -12,4 +13,5 @@ public interface IGmlClientManager
     Task DownloadFiles(IEnumerable<LocalFileInfoDto> files, int loadFilesPartCount);
     public Task<Process> GetProcess(ProfileInfoReadDto profileDto);
     Task DownloadNotInstalledFiles(ProfileInfoReadDto profileInfo);
+    Task<(IUser, string)> Auth(string login, string password);
 }

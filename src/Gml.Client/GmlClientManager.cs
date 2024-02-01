@@ -3,7 +3,10 @@ using System.Diagnostics;
 using System.Security.Cryptography;
 using System.Text;
 using Gml.Client.Helpers;
+using Gml.Client.Models;
 using Gml.WebApi.Models.Dtos.Profiles;
+using Gml.WebApi.Models.Dtos.Response;
+using Gml.WebApi.Models.Dtos.Users;
 using Newtonsoft.Json;
 
 namespace Gml.Client;
@@ -25,6 +28,8 @@ public class GmlClientManager : IGmlClientManager
         {
             BaseAddress = new Uri(gateWay)
         };
+
+        _httpClient.DefaultRequestHeaders.UserAgent.ParseAdd($"Gml.Launcher-Client-{nameof(GmlClientManager)}/1.0 (OS: {Environment.OSVersion};)");
     }
 
     public async Task<IEnumerable<ReadProfileDto>> GetProfiles()
@@ -120,6 +125,43 @@ public class GmlClientManager : IGmlClientManager
         var updateFiles = await FindErroneousFiles(profileInfo);
 
         await DownloadFiles(updateFiles, 64);
+    }
+
+    public async Task<(IUser, string)> Auth(string login, string password)
+    {
+        var model = JsonConvert.SerializeObject(new AuthDto
+        {
+            Login = login,
+            Password = password
+        });
+
+        var authUser = new AuthUser
+        {
+            Name = login,
+        };
+
+        var data = new StringContent(model, Encoding.UTF8, "application/json");
+
+        var response = await _httpClient.PostAsync("/api/auth", data);
+
+        authUser.IsAuth = response.IsSuccessStatusCode;
+
+        var content = await response.Content.ReadAsStringAsync();
+
+        var dto = JsonConvert.DeserializeObject<ResponseMessage<AuthUser>>(content);
+
+        if (response.IsSuccessStatusCode && dto != null)
+        {
+            authUser.Uuid = dto.Data!.Uuid;
+            authUser.AccessToken = dto.Data!.AccessToken;
+            authUser.Has2Fa = dto.Data!.Has2Fa;
+            authUser.ExpiredDate = dto.Data!.ExpiredDate;
+
+            return (authUser, string.Empty);
+        }
+
+
+        return (authUser, dto?.Message ?? string.Empty);
     }
 
     private async Task DownloadFileAsync(string url, HttpClient httpClient, SemaphoreSlim semaphore,
