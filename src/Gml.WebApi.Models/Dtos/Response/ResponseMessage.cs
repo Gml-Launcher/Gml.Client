@@ -8,6 +8,7 @@ public class ResponseMessage
     public string Status { get; set; } = null!;
     public int StatusCode { get; set; }
     public string Message { get; set; }= null!;
+    public string[] Errors { get; set; }= null!;
 
     public static ResponseMessage Create(string message, HttpStatusCode statusCode)
     {

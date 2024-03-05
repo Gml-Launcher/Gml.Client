@@ -11,42 +11,42 @@ public class ProcessUtil
 
     public Process Process { get; private set; }
 
-    public ProcessUtil(Process process) => this.Process = process;
+    public ProcessUtil(Process process) => Process = process;
 
     public void StartWithEvents()
     {
-        this.Process.StartInfo.CreateNoWindow = true;
-        this.Process.StartInfo.WindowStyle = ProcessWindowStyle.Hidden;
-        this.Process.StartInfo.UseShellExecute = false;
-        this.Process.StartInfo.RedirectStandardError = true;
-        this.Process.StartInfo.RedirectStandardOutput = true;
-        this.Process.StartInfo.StandardOutputEncoding = Encoding.UTF8;
-        this.Process.StartInfo.StandardErrorEncoding = Encoding.UTF8;
-        this.Process.EnableRaisingEvents = true;
-        this.Process.ErrorDataReceived += (DataReceivedEventHandler) ((s, e) =>
+        Process.StartInfo.CreateNoWindow = true;
+        Process.StartInfo.WindowStyle = ProcessWindowStyle.Hidden;
+        Process.StartInfo.UseShellExecute = false;
+        Process.StartInfo.RedirectStandardError = true;
+        Process.StartInfo.RedirectStandardOutput = true;
+        Process.StartInfo.StandardOutputEncoding = Encoding.UTF8;
+        Process.StartInfo.StandardErrorEncoding = Encoding.UTF8;
+        Process.EnableRaisingEvents = true;
+        Process.ErrorDataReceived += (DataReceivedEventHandler) ((s, e) =>
         {
-            EventHandler<string> outputReceived = this.OutputReceived;
-            if (outputReceived == null)
+            if (OutputReceived == null)
                 return;
-            outputReceived((object) this, e.Data ?? "");
+            OutputReceived(this, e.Data ?? "");
         });
-        this.Process.OutputDataReceived += (DataReceivedEventHandler) ((s, e) =>
+
+        Process.OutputDataReceived += (DataReceivedEventHandler) ((s, e) =>
         {
-            EventHandler<string> outputReceived = this.OutputReceived;
-            if (outputReceived == null)
+            if (OutputReceived == null)
                 return;
-            outputReceived((object) this, e.Data ?? "");
+            OutputReceived(this, e.Data ?? "");
         });
-        this.Process.Exited += (EventHandler) ((s, e) =>
+
+        Process.Exited += (s, e) =>
         {
-            EventHandler exited = this.Exited;
-            if (exited == null)
+            if (Exited == null)
                 return;
-            exited((object) this, new EventArgs());
-        });
-        this.Process.Start();
-        this.Process.BeginErrorReadLine();
-        this.Process.BeginOutputReadLine();
+            Exited(this, EventArgs.Empty);
+        };
+
+        Process.Start();
+        Process.BeginErrorReadLine();
+        Process.BeginOutputReadLine();
     }
 
     public Task WaitForExitTaskAsync() => Task.Run((Action) (() => this.Process.WaitForExit()));
