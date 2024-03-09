@@ -12,10 +12,9 @@ public class Tests
     public void Setup()
     {
         var localDirectory = "C:\\Users\\aa.terentiev\\AppData\\Roaming\\AztexClient";
-        var baseAddress = "https://launcher.recloud.tech";
-        var skinAddress = "https://launcher.recloud.tech";
+        var baseAddress = "http://192.168.31.49:5000";
 
-        Client = new GmlClientManager(baseAddress, skinAddress, localDirectory);
+        Client = new GmlClientManager(baseAddress, localDirectory);
 
         Client.ProgressChanged += (sender, args) =>
         {

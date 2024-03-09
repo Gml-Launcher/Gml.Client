@@ -22,7 +22,7 @@ public class GmlClientManager : IGmlClientManager
     private int _finishedFilesCount = 0;
     private int _progress;
 
-    public GmlClientManager(string gateWay, string skinGateWay, string installationDirectory)
+    public GmlClientManager(string gateWay, string installationDirectory)
     {
         _installationDirectory = installationDirectory;
         _httpClient = new HttpClient
@@ -30,11 +30,6 @@ public class GmlClientManager : IGmlClientManager
             BaseAddress = new Uri(gateWay),
             Timeout = TimeSpan.FromSeconds(20)
 
-        };
-
-        _skinHttpClient = new HttpClient
-        {
-            BaseAddress = new Uri(skinGateWay)
         };
 
         _httpClient.DefaultRequestHeaders.UserAgent.ParseAdd(
@@ -128,7 +123,7 @@ public class GmlClientManager : IGmlClientManager
     {
         var updateFiles = await FindErroneousFiles(profileInfo);
 
-        await DownloadFiles(updateFiles, 64);
+        await DownloadFiles(updateFiles, 16);
     }
 
     public async Task<(IUser User, string Message, IEnumerable<string> Details)> Auth(string login, string password)
