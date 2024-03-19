@@ -1,6 +1,4 @@
 using System.Diagnostics;
-using Gml.WebApi.Models.Dtos.Profiles;
-using Gml.WebApi.Models.Enums.System;
 
 namespace Gml.Client.Tests;
 
