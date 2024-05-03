@@ -100,12 +100,9 @@ public class GmlClientManager : IGmlClientManager
         process.StartInfo = new ProcessStartInfo
         {
             FileName = profileDto.JavaPath.Replace("{localPath}", profilePath),
-            Arguments = arguments.Replace("{authEndpoint}",
-                $"{_httpClient.BaseAddress.AbsoluteUri}api/v1/integrations/authlib/minecraft"),
+            Arguments = arguments.Replace("{authEndpoint}", $"{_httpClient.BaseAddress.AbsoluteUri}api/v1/integrations/authlib/minecraft"),
+            WorkingDirectory = profilePath
         };
-        //http://localhost:5000/api/v1/integrations/authlib/minecraft
-        //http://localhost:5000/api/v1/integrations/authlib/minecraft
-
 
         return Task.FromResult(process);
     }
