@@ -13,7 +13,7 @@ public interface IGmlClientManager
     public event EventHandler<ProgressChangedEventArgs>? ProgressChanged;
     Task<ResponseMessage<List<ProfileReadDto>>> GetProfiles();
     Task<ResponseMessage<ProfileReadInfoDto?>?> GetProfileInfo(ProfileCreateInfoDto profileCreateInfoDto);
-    Task DownloadFiles(IEnumerable<ProfileFileReadDto> files, int loadFilesPartCount);
+    Task DownloadFiles(ProfileFileReadDto[] files, int loadFilesPartCount);
     public Task<Process> GetProcess(ProfileReadInfoDto profileDto);
     Task DownloadNotInstalledFiles(ProfileReadInfoDto profileInfo);
     Task<(IUser User, string Message, IEnumerable<string> Details)> Auth(string login, string password);

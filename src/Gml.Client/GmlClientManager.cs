@@ -71,22 +71,46 @@ public class GmlClientManager : IGmlClientManager
         return JsonConvert.DeserializeObject<ResponseMessage<ProfileReadInfoDto>>(content);
     }
 
-    public async Task DownloadFiles(IEnumerable<ProfileFileReadDto> files, int loadFilesPartCount = 16)
+    public async Task DownloadFiles(ProfileFileReadDto[] files, int loadFilesPartCount = 16)
     {
-        if (files == null)
-            throw new ArgumentNullException(nameof(files));
+        _progress = 0;
+        _progressFilesCount = files.Length;
 
-        _progressFilesCount = files.Count();
-        _finishedFilesCount = 0;
+        var throttler = new SemaphoreSlim(loadFilesPartCount);
 
-        var semaphore = new SemaphoreSlim(loadFilesPartCount);
+        var tasks = files.Select(async file =>
+        {
+            await throttler.WaitAsync();
 
-        var downloadTasks = files.Select(fileInfo =>
-            DownloadFileAsync($"{_httpClient.BaseAddress.AbsoluteUri}api/v1/file/{fileInfo.Hash}", _httpClient,
-                semaphore,
-                string.Join("", _installationDirectory, fileInfo.Directory)));
+            try
+            {
+                var fileInfo = new FileInfo(string.Join("", _installationDirectory, file.Directory));
+                var url = $"{_httpClient.BaseAddress.AbsoluteUri}api/v1/file/{file.Hash}";
 
-        await Task.WhenAll(downloadTasks);
+                if (!fileInfo.Directory!.Exists)
+                    fileInfo.Directory.Create();
+
+                using (var fs = new FileStream(fileInfo.FullName, FileMode.OpenOrCreate))
+                {
+                    // Загрузка файла по url
+                     var stream = await _httpClient.GetStreamAsync(url);
+
+                    // Копируем данные в файловую систему
+                    await stream.CopyToAsync(fs);
+                }
+
+                _finishedFilesCount++;
+                _progress = Convert.ToInt16(_finishedFilesCount * 100 / _progressFilesCount);
+                ProgressChanged?.Invoke(this, new ProgressChangedEventArgs(_progress, null));
+            }
+            finally
+            {
+                throttler.Release(); // Возвращаем пройденное разрешение обратно в SemaphoreSlim.
+            }
+        });
+
+        // Исполнение всех задач.
+        await Task.WhenAll(tasks);
     }
 
     public Task<Process> GetProcess(ProfileReadInfoDto profileDto)
@@ -125,7 +149,7 @@ public class GmlClientManager : IGmlClientManager
     {
         var updateFiles = await FindErroneousFiles(profileInfo);
 
-        await DownloadFiles(updateFiles, 16);
+        await DownloadFiles(updateFiles.ToArray(), 16);
     }
 
     public async Task<(IUser User, string Message, IEnumerable<string> Details)> Auth(string login, string password)
@@ -174,20 +198,17 @@ public class GmlClientManager : IGmlClientManager
             {
                 await semaphore.WaitAsync();
 
-                var response = await httpClient.GetAsync(url);
-
-                response.EnsureSuccessStatusCode();
+                var responseStream = await httpClient.GetStreamAsync(url);
 
                 var fileInfo = new FileInfo(fileName);
 
                 if (!fileInfo.Directory!.Exists)
                     fileInfo.Directory.Create();
 
-                await using Stream contentStream = await response.Content.ReadAsStreamAsync(),
-                    fileStream = new FileStream(fileName, FileMode.Create, FileAccess.Write, FileShare.None, 8192,
-                        true);
+                var fileStream = new FileStream(fileName, FileMode.Create, FileAccess.Write, FileShare.None, 8192,
+                    true);
 
-                await contentStream.CopyToAsync(fileStream);
+                await responseStream.CopyToAsync(fileStream);
                 _finishedFilesCount++;
                 _progress = Convert.ToInt16(_finishedFilesCount * 100 / _progressFilesCount);
                 ProgressChanged?.Invoke(this, new ProgressChangedEventArgs(_progress, null));
