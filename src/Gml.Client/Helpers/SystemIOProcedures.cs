@@ -36,12 +36,15 @@ public class SystemIoProcedures
 
             string localPath = Path.Combine(installationDirectory, downloadingFile.Directory);
 
-            if (await FileExistsAsync(localPath))
+            var fileIsExists = await FileExistsAsync(localPath);
+            var hashIsCorrect = SystemHelper.CalculateFileHash(localPath, new SHA256Managed()) == downloadingFile.Hash;
+
+            if (fileIsExists && hashIsCorrect)
             {
                 continue;
             }
 
-            if (!whiteListFiles.Contains(downloadingFile) || await CalculateFileHashAsync(localPath) != downloadingFile.Hash)
+            if (!fileIsExists || (!hashIsCorrect && !whiteListFiles.Any(c => c.Hash.Equals(downloadingFile.Hash))))
             {
                 errorFiles.Add(downloadingFile);
             }
@@ -62,23 +65,6 @@ public class SystemIoProcedures
         }
     }
 
-    private async Task<string> CalculateFileHashAsync(string filePath)
-    {
-        try
-        {
-            using (var stream = File.OpenRead(filePath))
-            {
-                var hashAlgorithm = new SHA256Managed();
-                var hashBytes = hashAlgorithm.ComputeHash(stream);
-                return BitConverter.ToString(hashBytes).Replace("-", "");
-            }
-        }
-        catch (Exception)
-        {
-            return string.Empty;
-        }
-    }
-
     public Task RemoveFiles(ProfileReadInfoDto profileInfo)
     {
         try
@@ -87,12 +73,12 @@ public class SystemIoProcedures
 
             var files = new DirectoryInfo(profilePath).GetFiles("*.*", SearchOption.AllDirectories);
 
-            var exclusionSet = new HashSet<string>(
-                profileInfo.Files
-                    .Select(f => new FileInfo(string.Join("", _installationDirectory, f.Directory)).FullName)
-                    .Concat(profileInfo.WhiteListFiles
-                        .Select(wf => new FileInfo(string.Join("", _installationDirectory, wf.Directory)).FullName))
-            );
+            var hashSet = profileInfo.Files
+                .Select(f => new FileInfo(GetRealFilePath(_installationDirectory, f)).FullName)
+                .Concat(profileInfo.WhiteListFiles
+                    .Select(wf => new FileInfo(GetRealFilePath(_installationDirectory, wf)).FullName));
+
+            var exclusionSet = new HashSet<string>(hashSet);
 
             var missingFiles = files
                 .Where(f => !exclusionSet.Contains(f.FullName))
@@ -116,5 +102,15 @@ public class SystemIoProcedures
         }
 
         return Task.CompletedTask;
+    }
+
+    private string GetRealFilePath(string installationDirectory, ProfileFileReadDto file)
+    {
+        if (_osType == OsType.Windows)
+        {
+            file.Directory = file.Directory.Replace('/', Path.DirectorySeparatorChar).TrimStart(Path.DirectorySeparatorChar);
+        }
+
+        return Path.Combine(installationDirectory, file.Directory);
     }
 }

@@ -55,5 +55,7 @@ public class GmlClientManager : IGmlClientManager
     public Task<(IUser User, string Message, IEnumerable<string> Details)> Auth(string login, string password)
         => _apiProcedures.Auth(login, password);
 
+    public Task ClearFiles(ProfileReadInfoDto profile) => _systemProcedures.RemoveFiles(profile);
+
     public static Task<string> GetSentryLink(string hostUrl) => ApiProcedures.GetSentryLink(hostUrl);
 }

@@ -15,4 +15,5 @@ public interface IGmlClientManager
     public Task<Process> GetProcess(ProfileReadInfoDto profileDto);
     Task DownloadNotInstalledFiles(ProfileReadInfoDto profileInfo);
     Task<(IUser User, string Message, IEnumerable<string> Details)> Auth(string login, string password);
+    Task ClearFiles(ProfileReadInfoDto profile);
 }

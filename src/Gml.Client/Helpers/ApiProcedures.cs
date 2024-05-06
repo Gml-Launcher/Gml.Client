@@ -190,55 +190,86 @@ public class ApiProcedures
     }
 
     public async Task DownloadFiles(string installationDirectory, ProfileFileReadDto[] files, int loadFilesPartCount)
+{
+    _progress = 0;
+    _finishedFilesCount = 0;
+    _progressFilesCount = files.Length;
+
+    var throttler = new SemaphoreSlim(loadFilesPartCount);
+
+    var tasks = files.Select(file => DownloadFileWithRetry(installationDirectory, file, throttler));
+
+    // Исполнение всех задач.
+    await Task.WhenAll(tasks);
+}
+
+private async Task DownloadFileWithRetry(string installationDirectory, ProfileFileReadDto file, SemaphoreSlim throttler)
+{
+    // Try to download file up to 3 times
+    for (int attempt = 1; attempt <= 3; attempt++)
     {
-        _progress = 0;
-        _finishedFilesCount = 0;
-        _progressFilesCount = files.Length;
-
-        var throttler = new SemaphoreSlim(loadFilesPartCount);
-
-        var tasks = files.Select(async file =>
+        try
         {
-            await throttler.WaitAsync();
-
-            try
-            {
-                if (_osType == OsType.Windows)
-                {
-                    file.Directory = file.Directory.Replace('/', Path.DirectorySeparatorChar)
-                        .TrimStart(Path.DirectorySeparatorChar);
-                }
-
-                string localPath = Path.Combine(installationDirectory, file.Directory);
-
-                var fileInfo = new FileInfo(localPath);
-                var url = $"{_httpClient.BaseAddress.AbsoluteUri}api/v1/file/{file.Hash}";
-
-                if (!fileInfo.Directory!.Exists)
-                    fileInfo.Directory.Create();
-
-                using (var fs = new FileStream(fileInfo.FullName, FileMode.OpenOrCreate))
-                {
-                    // Загрузка файла по url
-                    var stream = await _httpClient.GetStreamAsync(url);
-
-                    // Копируем данные в файловую систему
-                    await stream.CopyToAsync(fs);
-                }
-
-                _finishedFilesCount++;
-                _progress = Convert.ToInt16(_finishedFilesCount * 100 / _progressFilesCount);
-                ProgressChanged?.Invoke(this, new ProgressChangedEventArgs(_progress, null));
-            }
-            finally
-            {
-                throttler.Release(); // Возвращаем пройденное разрешение обратно в SemaphoreSlim.
-            }
-        });
-
-        // Исполнение всех задач.
-        await Task.WhenAll(tasks);
+            await DownloadFile(installationDirectory, file, throttler);
+            return;
+        }
+        catch
+        {
+            if (attempt == 3) // if last try throws, don't swallow exception
+                throw;
+            // add delay before next try
+            await Task.Delay(TimeSpan.FromSeconds(attempt * 2));
+        }
     }
+}
+
+private async Task DownloadFile(string installationDirectory, ProfileFileReadDto file, SemaphoreSlim throttler)
+{
+    await throttler.WaitAsync();
+
+    try
+    {
+        if (_osType == OsType.Windows)
+        {
+            file.Directory = file.Directory.Replace('/', Path.DirectorySeparatorChar)
+                .TrimStart(Path.DirectorySeparatorChar);
+        }
+
+        string localPath = Path.Combine(installationDirectory, file.Directory);
+        await EnsureDirectoryExists(localPath);
+
+        var url = $"{_httpClient.BaseAddress.AbsoluteUri}api/v1/file/{file.Hash}";
+
+        using (var fs = new FileStream(localPath, FileMode.OpenOrCreate))
+        {
+            // Загрузка файла по url
+            var stream = await _httpClient.GetStreamAsync(url);
+
+            // Копируем данные в файловую систему
+            await stream.CopyToAsync(fs);
+        }
+
+        _finishedFilesCount++;
+        _progress = Convert.ToInt16(_finishedFilesCount * 100 / _progressFilesCount);
+        ProgressChanged?.Invoke(this, new ProgressChangedEventArgs(_progress, null));
+    }
+    finally
+    {
+        throttler.Release(); // Возвращаем пройденное разрешение обратно в SemaphoreSlim.
+    }
+}
+
+private async Task EnsureDirectoryExists(string localPath)
+{
+    var directory = Path.GetDirectoryName(localPath);
+    if (directory == null) return;
+
+    var directoryInfo = new DirectoryInfo(directory);
+    if (!directoryInfo.Exists)
+    {
+        directoryInfo.Create();
+    }
+}
 
     // public Task<IEnumerable<ProfileFileReadDto>> FindErrorFiles(
     //     ProfileReadInfoDto profileInfo,
