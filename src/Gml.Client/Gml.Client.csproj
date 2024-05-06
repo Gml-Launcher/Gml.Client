@@ -21,6 +21,7 @@
     </ItemGroup>
 
     <ItemGroup>
+      <ProjectReference Include="..\Gml.Web.Api.Domains\Gml.Web.Api.Domains.csproj" />
       <ProjectReference Include="..\Gml.Web.Api.Dto\Gml.Web.Api.Dto.csproj" />
     </ItemGroup>
 

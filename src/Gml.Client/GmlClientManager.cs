@@ -1,251 +1,59 @@
 using System.ComponentModel;
 using System.Diagnostics;
 using System.Security.Cryptography;
-using System.Text;
 using Gml.Client.Helpers;
 using Gml.Client.Models;
+using Gml.Web.Api.Domains.System;
 using Gml.Web.Api.Dto.Files;
 using Gml.Web.Api.Dto.Messages;
 using Gml.Web.Api.Dto.Profile;
-using Gml.Web.Api.Dto.Texture;
-using Gml.Web.Api.Dto.User;
-using Newtonsoft.Json;
 
 namespace Gml.Client;
 
 public class GmlClientManager : IGmlClientManager
 {
-    public string ProjectName => _projectName;
+    public string ProjectName { get; }
+
     public event EventHandler<ProgressChangedEventArgs>? ProgressChanged;
 
     private readonly string _installationDirectory;
-    private readonly string _projectName;
-    private readonly HttpClient _httpClient;
-    private readonly HttpClient _skinHttpClient;
-    private int _progressFilesCount = 0;
-    private int _finishedFilesCount = 0;
-    private int _progress;
+    private readonly ApiProcedures _apiProcedures;
+    private readonly SystemIoProcedures _systemProcedures;
 
-    public GmlClientManager(string? installationDirectory, string gateWay, string projectName)
+    public GmlClientManager(string installationDirectory, string gateWay, string projectName, OsType osType)
     {
         _installationDirectory = installationDirectory;
-        _projectName = projectName;
-        _httpClient = new HttpClient
+
+        _systemProcedures = new SystemIoProcedures(installationDirectory, osType);
+        _apiProcedures = new ApiProcedures(new HttpClient
         {
             BaseAddress = new Uri(gateWay)
-        };
+        }, osType);
 
-        _httpClient.DefaultRequestHeaders.UserAgent.ParseAdd(
-            $"Gml.Launcher-Client-{nameof(GmlClientManager)}/1.0 (OS: {Environment.OSVersion};)");
+        _apiProcedures.ProgressChanged += (sender, args) => ProgressChanged?.Invoke(sender, args);
+
+        ProjectName = projectName;
     }
 
-    public async Task<ResponseMessage<List<ProfileReadDto>>> GetProfiles()
-    {
-        Console.Write("Load profiles: ");
-        var response = await _httpClient.GetAsync("/api/v1/profiles");
+    public Task<ResponseMessage<List<ProfileReadDto>>> GetProfiles()
+        => _apiProcedures.GetProfiles();
 
-        Console.WriteLine(response.IsSuccessStatusCode ? "Success load" : "Failed load");
-
-        if (!response.IsSuccessStatusCode)
-            return new ResponseMessage<List<ProfileReadDto>>();
-
-        var content = await response.Content.ReadAsStringAsync();
-
-        return JsonConvert.DeserializeObject<ResponseMessage<List<ProfileReadDto>>>(content)
-               ?? new ResponseMessage<List<ProfileReadDto>>();
-    }
-
-    public async Task<ResponseMessage<ProfileReadInfoDto?>?> GetProfileInfo(ProfileCreateInfoDto profileCreateInfoDto)
-    {
-        var model = JsonConvert.SerializeObject(profileCreateInfoDto);
-
-        var data = new StringContent(model, Encoding.UTF8, "application/json");
-
-        var response = await _httpClient.PostAsync("/api/v1/profiles/info", data);
-
-        if (!response.IsSuccessStatusCode)
-            return null;
-
-        var content = await response.Content.ReadAsStringAsync();
-
-        return JsonConvert.DeserializeObject<ResponseMessage<ProfileReadInfoDto>>(content);
-    }
-
-    public async Task DownloadFiles(ProfileFileReadDto[] files, int loadFilesPartCount = 16)
-    {
-        _progress = 0;
-        _progressFilesCount = files.Length;
-
-        var throttler = new SemaphoreSlim(loadFilesPartCount);
-
-        var tasks = files.Select(async file =>
-        {
-            await throttler.WaitAsync();
-
-            try
-            {
-                var fileInfo = new FileInfo(string.Join("", _installationDirectory, file.Directory));
-                var url = $"{_httpClient.BaseAddress.AbsoluteUri}api/v1/file/{file.Hash}";
-
-                if (!fileInfo.Directory!.Exists)
-                    fileInfo.Directory.Create();
-
-                using (var fs = new FileStream(fileInfo.FullName, FileMode.OpenOrCreate))
-                {
-                    // Загрузка файла по url
-                     var stream = await _httpClient.GetStreamAsync(url);
-
-                    // Копируем данные в файловую систему
-                    await stream.CopyToAsync(fs);
-                }
-
-                _finishedFilesCount++;
-                _progress = Convert.ToInt16(_finishedFilesCount * 100 / _progressFilesCount);
-                ProgressChanged?.Invoke(this, new ProgressChangedEventArgs(_progress, null));
-            }
-            finally
-            {
-                throttler.Release(); // Возвращаем пройденное разрешение обратно в SemaphoreSlim.
-            }
-        });
-
-        // Исполнение всех задач.
-        await Task.WhenAll(tasks);
-    }
+    public Task<ResponseMessage<ProfileReadInfoDto?>?> GetProfileInfo(ProfileCreateInfoDto profileDto)
+        => _apiProcedures.GetProfileInfo(profileDto);
 
     public Task<Process> GetProcess(ProfileReadInfoDto profileDto)
-    {
-        var profilePath = _installationDirectory + @"\clients\" + profileDto.ProfileName;
-
-        var arguments = profileDto!.Arguments.Replace("{localPath}", profilePath);
-
-        var process = new Process();
-
-        process.StartInfo = new ProcessStartInfo
-        {
-            FileName = profileDto.JavaPath.Replace("{localPath}", profilePath),
-            Arguments = arguments.Replace("{authEndpoint}", $"{_httpClient.BaseAddress.AbsoluteUri}api/v1/integrations/authlib/minecraft"),
-            WorkingDirectory = profilePath
-        };
-
-        return Task.FromResult(process);
-    }
-
-    public Task<IEnumerable<ProfileFileReadDto>> FindErroneousFiles(ProfileReadInfoDto profileInfo)
-    {
-        var errorFiles = (from downloadingFile in profileInfo.Files
-            let localPath = _installationDirectory + downloadingFile.Directory
-            where profileInfo.WhiteListFiles.Count <= 0 ||
-                  profileInfo.WhiteListFiles.All(c => c.Directory != downloadingFile.Directory) ||
-                  !File.Exists(localPath)
-            where File.Exists(localPath) == false ||
-                  SystemHelper.CalculateFileHash(localPath, new SHA256Managed()) != downloadingFile.Hash
-            select downloadingFile).ToList();
-
-        return Task.FromResult(errorFiles.AsEnumerable());
-    }
+        => _apiProcedures.GetProcess(profileDto, _installationDirectory);
 
     public async Task DownloadNotInstalledFiles(ProfileReadInfoDto profileInfo)
     {
-        var updateFiles = await FindErroneousFiles(profileInfo);
+        await _systemProcedures.RemoveFiles(profileInfo);
 
-        await DownloadFiles(updateFiles.ToArray(), 16);
+        var updateFiles = await _systemProcedures.FindErroneousFilesAsync(profileInfo, _installationDirectory);
+        await _apiProcedures.DownloadFiles(_installationDirectory, updateFiles, 16);
     }
 
-    public async Task<(IUser User, string Message, IEnumerable<string> Details)> Auth(string login, string password)
-    {
-        var model = JsonConvert.SerializeObject(new BaseUserPassword
-        {
-            Login = login,
-            Password = password
-        });
+    public Task<(IUser User, string Message, IEnumerable<string> Details)> Auth(string login, string password)
+        => _apiProcedures.Auth(login, password);
 
-        var authUser = new AuthUser
-        {
-            Name = login
-        };
-
-        var data = new StringContent(model, Encoding.UTF8, "application/json");
-
-        var response = await _httpClient.PostAsync("/api/v1/integrations/auth/signin", data);
-
-        authUser.IsAuth = response.IsSuccessStatusCode;
-
-        var content = await response.Content.ReadAsStringAsync();
-
-        var dto = JsonConvert.DeserializeObject<ResponseMessage<AuthUser>>(content);
-
-        if (response.IsSuccessStatusCode && dto != null)
-        {
-            authUser.Uuid = dto.Data!.Uuid;
-            authUser.AccessToken = dto.Data!.AccessToken;
-            authUser.Has2Fa = dto.Data!.Has2Fa;
-            authUser.ExpiredDate = dto.Data!.ExpiredDate;
-            authUser.TextureUrl = dto.Data.TextureUrl;
-
-            return (authUser, string.Empty, Enumerable.Empty<string>());
-        }
-
-        return (authUser, dto?.Message ?? string.Empty, dto?.Errors ?? Enumerable.Empty<string>());
-    }
-
-    private async Task DownloadFileAsync(string url, HttpClient httpClient, SemaphoreSlim semaphore, string fileName,
-        int retries = 3)
-    {
-        for (int attempt = 0; attempt < retries; attempt++)
-        {
-            try
-            {
-                await semaphore.WaitAsync();
-
-                var responseStream = await httpClient.GetStreamAsync(url);
-
-                var fileInfo = new FileInfo(fileName);
-
-                if (!fileInfo.Directory!.Exists)
-                    fileInfo.Directory.Create();
-
-                var fileStream = new FileStream(fileName, FileMode.Create, FileAccess.Write, FileShare.None, 8192,
-                    true);
-
-                await responseStream.CopyToAsync(fileStream);
-                _finishedFilesCount++;
-                _progress = Convert.ToInt16(_finishedFilesCount * 100 / _progressFilesCount);
-                ProgressChanged?.Invoke(this, new ProgressChangedEventArgs(_progress, null));
-
-                break; // Успешно завершено, выходим из цикла
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Ошибка при загрузке файла {url} ({attempt + 1} попытка): {ex.Message}");
-            }
-            finally
-            {
-                semaphore.Release();
-            }
-        }
-    }
-
-    public static async Task<string> GetSentryLink(string hostUrl)
-    {
-        try
-        {
-            using var client = new HttpClient();
-            var request = await client.GetAsync($"{hostUrl}/api/v1/integrations/sentry/dsn");
-
-            if (request.IsSuccessStatusCode)
-            {
-                var content = await request.Content.ReadAsStringAsync();
-                var url = JsonConvert.DeserializeObject<ResponseMessage<UrlServiceDto>>(content);
-
-                return url?.Data?.Url ?? string.Empty;
-            }
-        }
-        catch (Exception exception)
-        {
-            Console.WriteLine(exception);
-        }
-
-        return string.Empty;
-    }
+    public static Task<string> GetSentryLink(string hostUrl) => ApiProcedures.GetSentryLink(hostUrl);
 }

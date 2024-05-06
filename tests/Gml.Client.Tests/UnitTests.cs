@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using Gml.Web.Api.Domains.System;
 
 namespace Gml.Client.Tests;
 
@@ -12,7 +13,7 @@ public class Tests
         var localDirectory = "C:\\Users\\aa.terentiev\\AppData\\Roaming\\AztexClient";
         var baseAddress = "http://192.168.31.49:5000";
 
-        Client = new GmlClientManager(baseAddress, localDirectory);
+        Client = new GmlClientManager(baseAddress, localDirectory, "GmlLauncher", OsType.Linux);
 
         Client.ProgressChanged += (sender, args) =>
         {
