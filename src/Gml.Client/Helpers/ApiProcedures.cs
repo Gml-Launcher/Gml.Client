@@ -242,10 +242,8 @@ private async Task DownloadFile(string installationDirectory, ProfileFileReadDto
 
         using (var fs = new FileStream(localPath, FileMode.OpenOrCreate))
         {
-            // Загрузка файла по url
             var stream = await _httpClient.GetStreamAsync(url);
 
-            // Копируем данные в файловую систему
             await stream.CopyToAsync(fs);
         }
 

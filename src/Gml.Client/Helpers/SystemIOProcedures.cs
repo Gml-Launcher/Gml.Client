@@ -37,7 +37,7 @@ public class SystemIoProcedures
             string localPath = Path.Combine(installationDirectory, downloadingFile.Directory);
 
             var fileIsExists = await FileExistsAsync(localPath);
-            var hashIsCorrect = SystemHelper.CalculateFileHash(localPath, new SHA256Managed()) == downloadingFile.Hash;
+            var hashIsCorrect = fileIsExists && SystemHelper.CalculateFileHash(localPath, new SHA256Managed()) == downloadingFile.Hash;
 
             if (fileIsExists && hashIsCorrect)
             {
