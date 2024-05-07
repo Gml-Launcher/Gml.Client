@@ -16,4 +16,6 @@ public interface IGmlClientManager
     Task DownloadNotInstalledFiles(ProfileReadInfoDto profileInfo);
     Task<(IUser User, string Message, IEnumerable<string> Details)> Auth(string login, string password);
     Task ClearFiles(ProfileReadInfoDto profile);
+    Task LoadDiscordRpc();
+    Task UpdateDiscordRpcState(string state);
 }
