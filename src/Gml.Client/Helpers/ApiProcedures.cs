@@ -350,7 +350,7 @@ private async Task EnsureDirectoryExists(string localPath)
     public static Task<string?> GetDiscordClient(string hostUrl)
     {
 
-        return Task.FromResult("1205450995820265522");
+        return Task.FromResult(string.Empty);
     }
 }
 
