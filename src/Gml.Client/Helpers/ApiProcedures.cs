@@ -2,6 +2,7 @@
 using System.Diagnostics;
 using System.Security.Cryptography;
 using System.Text;
+using DiscordRPC;
 using Gml.Client.Models;
 using Gml.Web.Api.Domains.System;
 using Gml.Web.Api.Dto.Files;
@@ -26,6 +27,7 @@ public class ApiProcedures
     internal event EventHandler<string>? FileAdded;
 
     private Dictionary<string, ProfileFileWatcher> _fileWatchers = new();
+    private DiscordRpcClient? _discordRpcClient;
 
     public ApiProcedures(HttpClient httpClient, OsType osType)
     {
@@ -242,10 +244,8 @@ private async Task DownloadFile(string installationDirectory, ProfileFileReadDto
 
         using (var fs = new FileStream(localPath, FileMode.OpenOrCreate))
         {
-            // Загрузка файла по url
             var stream = await _httpClient.GetStreamAsync(url);
 
-            // Копируем данные в файловую систему
             await stream.CopyToAsync(fs);
         }
 
@@ -286,4 +286,71 @@ private async Task EnsureDirectoryExists(string localPath)
     //
     //
     // }
+    public async Task LoadDiscordRpc()
+    {
+        _discordRpcClient ??= await GetDiscordRpcClient();
+
+        _discordRpcClient?.SetPresence(new RichPresence
+        {
+            Details = "Gml.Launcher",
+            State = "Сидит в лаунчере",
+            Assets = new Assets
+            {
+                LargeImageKey = "logo",
+                LargeImageText = "Gml.Launcher",
+                SmallImageKey = "logo",
+                SmallImageText = "Sashok or Gravity, maybe you'll go fuck yourself"
+            }
+        });
+    }
+    public async Task UpdateDiscordRpcState(string state)
+    {
+        _discordRpcClient ??= await GetDiscordRpcClient();
+
+        if (_discordRpcClient?.CurrentPresence is { } discordPresence)
+        {
+            discordPresence.State = state;
+            _discordRpcClient.SetPresence(new RichPresence
+            {
+                Timestamps = Timestamps.Now,
+                Details = "Gml.Launcher",
+                State = state,
+                Assets = new Assets
+                {
+                    LargeImageKey = "logo",
+                    LargeImageText = "Gml.Launcher",
+                    SmallImageKey = "logo",
+                    SmallImageText = "Sashok or Gravity, maybe you'll go fuck yourself"
+                }
+            });
+        }
+
+    }
+
+    private async Task<DiscordRpcClient?> GetDiscordRpcClient()
+    {
+        if (_discordRpcClient is null)
+        {
+
+            var clientId = await GetDiscordClient("");
+
+            if (string.IsNullOrEmpty(clientId))
+            {
+                return null;
+            }
+
+            _discordRpcClient = new DiscordRpcClient(clientId);
+            _discordRpcClient.Initialize();
+            Debug.WriteLine($"DiscordRPC is Initialized: {_discordRpcClient.IsInitialized}");
+        }
+
+        return _discordRpcClient;
+    }
+
+    public static Task<string?> GetDiscordClient(string hostUrl)
+    {
+
+        return Task.FromResult(string.Empty);
+    }
 }
+

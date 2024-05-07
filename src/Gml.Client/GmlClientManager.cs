@@ -38,6 +38,12 @@ public class GmlClientManager : IGmlClientManager
     public Task<ResponseMessage<List<ProfileReadDto>>> GetProfiles()
         => _apiProcedures.GetProfiles();
 
+    public Task LoadDiscordRpc()
+        => _apiProcedures.LoadDiscordRpc();
+
+    public Task UpdateDiscordRpcState(string state)
+        => _apiProcedures.UpdateDiscordRpcState(state);
+
     public Task<ResponseMessage<ProfileReadInfoDto?>?> GetProfileInfo(ProfileCreateInfoDto profileDto)
         => _apiProcedures.GetProfileInfo(profileDto);
 
