@@ -6,6 +6,7 @@ using DiscordRPC;
 using Gml.Client.Models;
 using Gml.Web.Api.Domains.System;
 using Gml.Web.Api.Dto.Files;
+using Gml.Web.Api.Dto.Integration;
 using Gml.Web.Api.Dto.Messages;
 using Gml.Web.Api.Dto.Profile;
 using Gml.Web.Api.Dto.Texture;
@@ -27,7 +28,7 @@ public class ApiProcedures
     internal event EventHandler<string>? FileAdded;
 
     private Dictionary<string, ProfileFileWatcher> _fileWatchers = new();
-    private DiscordRpcClient? _discordRpcClient;
+    private (DiscordRpcClient? Client, DiscordRpcReadDto? ClientInfo)? _discordRpcClient;
 
     public ApiProcedures(HttpClient httpClient, OsType osType)
     {
@@ -192,165 +193,165 @@ public class ApiProcedures
     }
 
     public async Task DownloadFiles(string installationDirectory, ProfileFileReadDto[] files, int loadFilesPartCount)
-{
-    _progress = 0;
-    _finishedFilesCount = 0;
-    _progressFilesCount = files.Length;
-
-    var throttler = new SemaphoreSlim(loadFilesPartCount);
-
-    var tasks = files.Select(file => DownloadFileWithRetry(installationDirectory, file, throttler));
-
-    // Исполнение всех задач.
-    await Task.WhenAll(tasks);
-}
-
-private async Task DownloadFileWithRetry(string installationDirectory, ProfileFileReadDto file, SemaphoreSlim throttler)
-{
-    // Try to download file up to 3 times
-    for (int attempt = 1; attempt <= 3; attempt++)
     {
+        _progress = 0;
+        _finishedFilesCount = 0;
+        _progressFilesCount = files.Length;
+
+        var throttler = new SemaphoreSlim(loadFilesPartCount);
+
+        var tasks = files.Select(file => DownloadFileWithRetry(installationDirectory, file, throttler));
+
+        // Исполнение всех задач.
+        await Task.WhenAll(tasks);
+    }
+
+    private async Task DownloadFileWithRetry(string installationDirectory, ProfileFileReadDto file,
+        SemaphoreSlim throttler)
+    {
+        // Try to download file up to 3 times
+        for (int attempt = 1; attempt <= 3; attempt++)
+        {
+            try
+            {
+                await DownloadFile(installationDirectory, file, throttler);
+                return;
+            }
+            catch
+            {
+                if (attempt == 3)
+                    throw;
+            }
+        }
+    }
+
+    private async Task DownloadFile(string installationDirectory, ProfileFileReadDto file, SemaphoreSlim throttler)
+    {
+        await throttler.WaitAsync();
+
         try
         {
-            await DownloadFile(installationDirectory, file, throttler);
-            return;
+            if (_osType == OsType.Windows)
+            {
+                file.Directory = file.Directory.Replace('/', Path.DirectorySeparatorChar)
+                    .TrimStart(Path.DirectorySeparatorChar);
+            }
+
+            string localPath = Path.Combine(installationDirectory, file.Directory);
+            await EnsureDirectoryExists(localPath);
+
+            var url = $"{_httpClient.BaseAddress.AbsoluteUri}api/v1/file/{file.Hash}";
+
+            using (var fs = new FileStream(localPath, FileMode.OpenOrCreate))
+            {
+                using (var stream = await _httpClient.GetStreamAsync(url))
+                {
+                    await stream.CopyToAsync(fs);
+                }
+            }
+
+            _finishedFilesCount++;
+            _progress = Convert.ToInt16(_finishedFilesCount * 100 / _progressFilesCount);
+            ProgressChanged?.Invoke(this, new ProgressChangedEventArgs(_progress, null));
+            Debug.WriteLine($"{_finishedFilesCount}/{_progressFilesCount}");
         }
-        catch
+        catch (Exception ex)
         {
-            if (attempt == 3) // if last try throws, don't swallow exception
-                throw;
-            // add delay before next try
-            await Task.Delay(TimeSpan.FromSeconds(attempt * 2));
+            Console.WriteLine(ex);
         }
-    }
-}
-
-private async Task DownloadFile(string installationDirectory, ProfileFileReadDto file, SemaphoreSlim throttler)
-{
-    await throttler.WaitAsync();
-
-    try
-    {
-        if (_osType == OsType.Windows)
+        finally
         {
-            file.Directory = file.Directory.Replace('/', Path.DirectorySeparatorChar)
-                .TrimStart(Path.DirectorySeparatorChar);
+            throttler.Release(); // Возвращаем пройденное разрешение обратно в SemaphoreSlim.
         }
+    }
 
-        string localPath = Path.Combine(installationDirectory, file.Directory);
-        await EnsureDirectoryExists(localPath);
+    private async Task EnsureDirectoryExists(string localPath)
+    {
+        var directory = Path.GetDirectoryName(localPath);
+        if (directory == null) return;
 
-        var url = $"{_httpClient.BaseAddress.AbsoluteUri}api/v1/file/{file.Hash}";
-
-        using (var fs = new FileStream(localPath, FileMode.OpenOrCreate))
+        var directoryInfo = new DirectoryInfo(directory);
+        if (!directoryInfo.Exists)
         {
-            var stream = await _httpClient.GetStreamAsync(url);
-
-            await stream.CopyToAsync(fs);
+            directoryInfo.Create();
         }
-
-        _finishedFilesCount++;
-        _progress = Convert.ToInt16(_finishedFilesCount * 100 / _progressFilesCount);
-        ProgressChanged?.Invoke(this, new ProgressChangedEventArgs(_progress, null));
     }
-    finally
-    {
-        throttler.Release(); // Возвращаем пройденное разрешение обратно в SemaphoreSlim.
-    }
-}
 
-private async Task EnsureDirectoryExists(string localPath)
-{
-    var directory = Path.GetDirectoryName(localPath);
-    if (directory == null) return;
-
-    var directoryInfo = new DirectoryInfo(directory);
-    if (!directoryInfo.Exists)
-    {
-        directoryInfo.Create();
-    }
-}
-
-    // public Task<IEnumerable<ProfileFileReadDto>> FindErrorFiles(
-    //     ProfileReadInfoDto profileInfo,
-    //     string installationDirectory)
-    // {
-    //
-    //
-    //
-    //
-    //
-    //
-    //
-    //
-    //
-    //
-    // }
     public async Task LoadDiscordRpc()
     {
         _discordRpcClient ??= await GetDiscordRpcClient();
 
-        _discordRpcClient?.SetPresence(new RichPresence
+        _discordRpcClient?.Client?.SetPresence(new RichPresence
         {
-            Details = "Gml.Launcher",
+            Details = _discordRpcClient?.ClientInfo?.Details,
             State = "Сидит в лаунчере",
             Assets = new Assets
             {
-                LargeImageKey = "logo",
-                LargeImageText = "Gml.Launcher",
-                SmallImageKey = "logo",
-                SmallImageText = "Sashok or Gravity, maybe you'll go fuck yourself"
+                LargeImageKey = _discordRpcClient?.ClientInfo?.LargeImageKey,
+                LargeImageText = _discordRpcClient?.ClientInfo?.LargeImageText,
+                SmallImageKey = _discordRpcClient?.ClientInfo?.SmallImageKey,
+                SmallImageText = _discordRpcClient?.ClientInfo?.SmallImageText
             }
         });
     }
+
     public async Task UpdateDiscordRpcState(string state)
     {
         _discordRpcClient ??= await GetDiscordRpcClient();
 
-        if (_discordRpcClient?.CurrentPresence is { } discordPresence)
+        if (_discordRpcClient?.Client?.CurrentPresence is { } discordPresence &&
+            await GetDiscordClient() is { } discordClient)
         {
             discordPresence.State = state;
-            _discordRpcClient.SetPresence(new RichPresence
+
+            _discordRpcClient?.Client.SetPresence(new RichPresence
             {
                 Timestamps = Timestamps.Now,
-                Details = "Gml.Launcher",
+                Details = discordClient.Details,
                 State = state,
                 Assets = new Assets
                 {
-                    LargeImageKey = "logo",
-                    LargeImageText = "Gml.Launcher",
-                    SmallImageKey = "logo",
-                    SmallImageText = "Sashok or Gravity, maybe you'll go fuck yourself"
+                    LargeImageKey = discordClient.LargeImageKey,
+                    LargeImageText = discordClient.LargeImageText,
+                    SmallImageKey = discordClient.SmallImageKey,
+                    SmallImageText = discordClient.SmallImageText
                 }
             });
         }
-
     }
 
-    private async Task<DiscordRpcClient?> GetDiscordRpcClient()
+    private async Task<(DiscordRpcClient? Client, DiscordRpcReadDto? ClientInfo)> GetDiscordRpcClient()
     {
-        if (_discordRpcClient is null)
+        if (_discordRpcClient?.Client is null)
         {
+            var discordClient = await GetDiscordClient();
 
-            var clientId = await GetDiscordClient("");
-
-            if (string.IsNullOrEmpty(clientId))
+            if (discordClient is null || string.IsNullOrEmpty(discordClient.ClientId))
             {
-                return null;
+                return (null, null);
             }
 
-            _discordRpcClient = new DiscordRpcClient(clientId);
-            _discordRpcClient.Initialize();
-            Debug.WriteLine($"DiscordRPC is Initialized: {_discordRpcClient.IsInitialized}");
+            var client = new DiscordRpcClient(discordClient.ClientId);
+            client.Initialize();
+
+            Debug.WriteLine($"DiscordRPC is Initialized: {client.IsInitialized}");
+            return (client, discordClient);
         }
 
-        return _discordRpcClient;
+        return (null, null);
     }
 
-    public static Task<string?> GetDiscordClient(string hostUrl)
+    public async Task<DiscordRpcReadDto?> GetDiscordClient()
     {
+        var response = await _httpClient.GetAsync("/api/v1/integrations/discord").ConfigureAwait(false);
 
-        return Task.FromResult(string.Empty);
+        if (!response.IsSuccessStatusCode)
+            return null;
+
+        var content = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
+
+        var result = JsonConvert.DeserializeObject<ResponseMessage<DiscordRpcReadDto?>>(content);
+
+        return result?.Data;
     }
 }
-

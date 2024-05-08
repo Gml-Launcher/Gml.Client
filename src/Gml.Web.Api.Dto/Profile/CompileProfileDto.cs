@@ -1,6 +1,6 @@
 namespace Gml.Web.Api.Dto.Profile;
 
-public class CompileProfileDto
+public class ProfileCompileDto
 {
     public string Name { get; set; } = null!;
 }
