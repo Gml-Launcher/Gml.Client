@@ -4,11 +4,9 @@ namespace Gml.Web.Api.Dto.Minecraft.AuthLib;
 
 public class Metadata
 {
-    [JsonProperty("id")]
-    public string ServerName { get; set; } = "Gml.Server";
+    [JsonProperty("id")] public string ServerName { get; set; } = "Gml.Server";
 
-    [JsonProperty("implementationName")]
-    public string ImplementationName { get; set; } = "Gml.Launcher";
+    [JsonProperty("implementationName")] public string ImplementationName { get; set; } = "Gml.Launcher";
 
     [JsonProperty("implementationVersion")]
     public string ImplementationVersion { get; set; } = "0.0.1";

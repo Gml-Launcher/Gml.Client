@@ -1,4 +1,5 @@
-﻿using System.Security.Cryptography;
+﻿using System.Collections.Concurrent;
+using System.Security.Cryptography;
 using Gml.Web.Api.Domains.System;
 using Gml.Web.Api.Dto.Files;
 using Gml.Web.Api.Dto.Profile;
@@ -16,19 +17,17 @@ public class SystemIoProcedures
         _osType = osType;
     }
 
-    public async Task<ProfileFileReadDto[]> FindErroneousFilesAsync(
+    public List<ProfileFileReadDto> FindErroneousFiles(
         ProfileReadInfoDto profileInfo,
         string installationDirectory)
     {
         // Кэширование списков файлов и белого списка
         var files = profileInfo.Files.ToList();
         var whiteListFiles = profileInfo.WhiteListFiles.ToHashSet();
+        var errorFiles = new ConcurrentBag<ProfileFileReadDto>();
 
-        var errorFiles = new List<ProfileFileReadDto>();
-
-        foreach (var downloadingFile in files)
+        Parallel.ForEach(files, downloadingFile =>
         {
-
             if (_osType == OsType.Windows)
             {
                 downloadingFile.Directory = downloadingFile.Directory.Replace('/', Path.DirectorySeparatorChar).TrimStart(Path.DirectorySeparatorChar);
@@ -36,33 +35,27 @@ public class SystemIoProcedures
 
             string localPath = Path.Combine(installationDirectory, downloadingFile.Directory);
 
-            var fileIsExists = await FileExistsAsync(localPath);
-            var hashIsCorrect = fileIsExists && SystemHelper.CalculateFileHash(localPath, new SHA256Managed()) == downloadingFile.Hash;
-
-            if (fileIsExists && hashIsCorrect)
+            if (FileExists(localPath))
             {
-                continue;
+                var hashIsCorrect = SystemHelper.CalculateFileHash(localPath, new SHA256Managed()) == downloadingFile.Hash;
+                if (hashIsCorrect)
+                {
+                    return;
+                }
             }
 
-            if (!fileIsExists || (!hashIsCorrect && !whiteListFiles.Any(c => c.Hash.Equals(downloadingFile.Hash))))
+            if (!FileExists(localPath) || !whiteListFiles.Any(c => c.Hash.Equals(downloadingFile.Hash)))
             {
                 errorFiles.Add(downloadingFile);
             }
-        }
+        });
 
-        return errorFiles.ToArray();
+        return errorFiles.ToList();
     }
 
-    private async Task<bool> FileExistsAsync(string filePath)
+    private static bool FileExists(string path)
     {
-        try
-        {
-            return await Task.Run(() => File.Exists(filePath));
-        }
-        catch (Exception)
-        {
-            return false;
-        }
+        return File.Exists(path);
     }
 
     public Task RemoveFiles(ProfileReadInfoDto profileInfo)
@@ -71,7 +64,14 @@ public class SystemIoProcedures
         {
             var profilePath = _installationDirectory + @"\clients\" + profileInfo.ProfileName;
 
-            var files = new DirectoryInfo(profilePath).GetFiles("*.*", SearchOption.AllDirectories);
+            var directoryInfo = new DirectoryInfo(profilePath);
+
+            if (!directoryInfo.Exists)
+            {
+                directoryInfo.Create();
+            }
+
+            var files = directoryInfo.GetFiles("*.*", SearchOption.AllDirectories);
 
             var hashSet = profileInfo.Files
                 .Select(f => new FileInfo(GetRealFilePath(_installationDirectory, f)).FullName)

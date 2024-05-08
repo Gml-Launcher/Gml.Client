@@ -54,8 +54,8 @@ public class GmlClientManager : IGmlClientManager
     {
         await _systemProcedures.RemoveFiles(profileInfo);
 
-        var updateFiles = await _systemProcedures.FindErroneousFilesAsync(profileInfo, _installationDirectory);
-        await _apiProcedures.DownloadFiles(_installationDirectory, updateFiles, 16);
+        var updateFiles = _systemProcedures.FindErroneousFiles(profileInfo, _installationDirectory);
+        await _apiProcedures.DownloadFiles(_installationDirectory, updateFiles.ToArray(), 16);
     }
 
     public Task<(IUser User, string Message, IEnumerable<string> Details)> Auth(string login, string password)
