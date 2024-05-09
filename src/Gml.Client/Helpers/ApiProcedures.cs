@@ -277,34 +277,15 @@ public class ApiProcedures
         }
     }
 
-    public async Task LoadDiscordRpc()
-    {
-        _discordRpcClient ??= await GetDiscordRpcClient();
-
-        _discordRpcClient?.Client?.SetPresence(new RichPresence
-        {
-            Details = _discordRpcClient?.ClientInfo?.Details,
-            State = "Сидит в лаунчере",
-            Assets = new Assets
-            {
-                LargeImageKey = _discordRpcClient?.ClientInfo?.LargeImageKey,
-                LargeImageText = _discordRpcClient?.ClientInfo?.LargeImageText,
-                SmallImageKey = _discordRpcClient?.ClientInfo?.SmallImageKey,
-                SmallImageText = _discordRpcClient?.ClientInfo?.SmallImageText
-            }
-        });
-    }
+    public Task LoadDiscordRpc() => GetDiscordRpcClient();
 
     public async Task UpdateDiscordRpcState(string state)
     {
         _discordRpcClient ??= await GetDiscordRpcClient();
 
-        if (_discordRpcClient?.Client?.CurrentPresence is { } discordPresence &&
-            await GetDiscordClient() is { } discordClient)
+        if (await GetDiscordClient() is { } discordClient)
         {
-            discordPresence.State = state;
-
-            _discordRpcClient?.Client.SetPresence(new RichPresence
+            _discordRpcClient?.Client?.SetPresence(new RichPresence
             {
                 Timestamps = Timestamps.Now,
                 Details = discordClient.Details,
