@@ -15,4 +15,5 @@ public class ProfileReadInfoDto
     public bool HasUpdate { get; set; }
     public List<ProfileFileReadDto> Files { get; set; }
     public List<ProfileFileReadDto> WhiteListFiles { get; set; }
+    public string Background { get; set; }
 }

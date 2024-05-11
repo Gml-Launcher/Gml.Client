@@ -11,7 +11,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\GmlCore.Interfaces\GmlCore.Interfaces.csproj" />
+    <ProjectReference Include="..\Gml.Web.Api.Domains\Gml.Web.Api.Domains.csproj"/>
   </ItemGroup>
 
 </Project>
