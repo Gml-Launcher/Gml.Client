@@ -13,7 +13,7 @@ public interface IGmlClientManager
     Task<ResponseMessage<List<ProfileReadDto>>> GetProfiles();
     Task<ResponseMessage<ProfileReadInfoDto?>?> GetProfileInfo(ProfileCreateInfoDto profileDto);
     public Task<Process> GetProcess(ProfileReadInfoDto profileDto);
-    Task DownloadNotInstalledFiles(ProfileReadInfoDto profileInfo);
+    Task DownloadNotInstalledFiles(ProfileReadInfoDto profileInfo, CancellationToken cancellationToken);
     Task<(IUser User, string Message, IEnumerable<string> Details)> Auth(string login, string password);
     Task ClearFiles(ProfileReadInfoDto profile);
     Task LoadDiscordRpc();

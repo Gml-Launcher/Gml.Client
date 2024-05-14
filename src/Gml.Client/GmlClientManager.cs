@@ -50,12 +50,12 @@ public class GmlClientManager : IGmlClientManager
     public Task<Process> GetProcess(ProfileReadInfoDto profileDto)
         => _apiProcedures.GetProcess(profileDto, _installationDirectory);
 
-    public async Task DownloadNotInstalledFiles(ProfileReadInfoDto profileInfo)
+    public async Task DownloadNotInstalledFiles(ProfileReadInfoDto profileInfo, CancellationToken cancellationToken = default)
     {
         await _systemProcedures.RemoveFiles(profileInfo);
 
         var updateFiles = _systemProcedures.FindErroneousFiles(profileInfo, _installationDirectory);
-        await _apiProcedures.DownloadFiles(_installationDirectory, updateFiles.ToArray(), 16);
+        await _apiProcedures.DownloadFiles(_installationDirectory, updateFiles.ToArray(), 16, cancellationToken);
     }
 
     public Task<(IUser User, string Message, IEnumerable<string> Details)> Auth(string login, string password)
