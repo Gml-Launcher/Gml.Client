@@ -1,6 +1,5 @@
 ﻿using System.ComponentModel;
 using System.Diagnostics;
-using System.Security.Cryptography;
 using System.Text;
 using DiscordRPC;
 using Gml.Client.Models;
@@ -189,10 +188,11 @@ public class ApiProcedures
             return (authUser, string.Empty, Enumerable.Empty<string>());
         }
 
-        return (authUser, dto?.Message ?? string.Empty, dto?.Errors ?? Enumerable.Empty<string>());
+        return (authUser, dto?.Message ?? string.Empty, dto?.Errors ?? []);
     }
 
-    public async Task DownloadFiles(string installationDirectory, ProfileFileReadDto[] files, int loadFilesPartCount)
+    public async Task DownloadFiles(string installationDirectory, ProfileFileReadDto[] files, int loadFilesPartCount,
+        CancellationToken cancellationToken = default)
     {
         _progress = 0;
         _finishedFilesCount = 0;
@@ -200,21 +200,21 @@ public class ApiProcedures
 
         var throttler = new SemaphoreSlim(loadFilesPartCount);
 
-        var tasks = files.Select(file => DownloadFileWithRetry(installationDirectory, file, throttler));
+        var tasks = files.Select(file => DownloadFileWithRetry(installationDirectory, file, throttler, cancellationToken));
 
         // Исполнение всех задач.
         await Task.WhenAll(tasks);
     }
 
     private async Task DownloadFileWithRetry(string installationDirectory, ProfileFileReadDto file,
-        SemaphoreSlim throttler)
+        SemaphoreSlim throttler, CancellationToken cancellationToken = default)
     {
         // Try to download file up to 3 times
         for (int attempt = 1; attempt <= 3; attempt++)
         {
             try
             {
-                await DownloadFile(installationDirectory, file, throttler);
+                await DownloadFile(installationDirectory, file, throttler, cancellationToken);
                 return;
             }
             catch
@@ -225,9 +225,10 @@ public class ApiProcedures
         }
     }
 
-    private async Task DownloadFile(string installationDirectory, ProfileFileReadDto file, SemaphoreSlim throttler)
+    private async Task DownloadFile(string installationDirectory, ProfileFileReadDto file, SemaphoreSlim throttler,
+        CancellationToken cancellationToken)
     {
-        await throttler.WaitAsync();
+        await throttler.WaitAsync(cancellationToken);
 
         try
         {
@@ -246,7 +247,7 @@ public class ApiProcedures
             {
                 using (var stream = await _httpClient.GetStreamAsync(url))
                 {
-                    await stream.CopyToAsync(fs);
+                    await stream.CopyToAsync(fs, cancellationToken);
                 }
             }
 
@@ -265,16 +266,18 @@ public class ApiProcedures
         }
     }
 
-    private async Task EnsureDirectoryExists(string localPath)
+    private Task EnsureDirectoryExists(string localPath)
     {
         var directory = Path.GetDirectoryName(localPath);
-        if (directory == null) return;
+        if (directory == null) return Task.CompletedTask;
 
         var directoryInfo = new DirectoryInfo(directory);
         if (!directoryInfo.Exists)
         {
             directoryInfo.Create();
         }
+
+        return Task.CompletedTask;
     }
 
     public Task LoadDiscordRpc() => GetDiscordRpcClient();
