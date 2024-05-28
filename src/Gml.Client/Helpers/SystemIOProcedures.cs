@@ -62,7 +62,14 @@ public class SystemIoProcedures
     {
         try
         {
-            var profilePath = _installationDirectory + @"\clients\" + profileInfo.ProfileName;
+            string[] allowedPaths =
+            [
+                Path.Combine(_installationDirectory, "clients", profileInfo.ProfileName, "saves"),
+                Path.Combine(_installationDirectory, "clients", profileInfo.ProfileName, "logs"),
+                Path.Combine(_installationDirectory, "clients", profileInfo.ProfileName, "crash-reports")
+            ];
+
+            var profilePath = Path.Combine(_installationDirectory, "clients", profileInfo.ProfileName);
 
             var directoryInfo = new DirectoryInfo(profilePath);
 
@@ -80,11 +87,11 @@ public class SystemIoProcedures
 
             var exclusionSet = new HashSet<string>(hashSet);
 
-            var missingFiles = files
-                .Where(f => !exclusionSet.Contains(f.FullName))
+            var filesToRemove = files
+                .Where(f => !exclusionSet.Contains(f.FullName) && !allowedPaths.Any(path => f.FullName.StartsWith(path)))
                 .ToList();
 
-            foreach (var file in missingFiles)
+            foreach (var file in filesToRemove)
             {
                 try
                 {
