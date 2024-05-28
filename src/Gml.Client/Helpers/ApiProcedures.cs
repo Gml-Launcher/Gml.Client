@@ -26,7 +26,7 @@ public class ApiProcedures
     internal event EventHandler<ProgressChangedEventArgs>? ProgressChanged;
     internal event EventHandler<string>? FileAdded;
 
-    private Dictionary<string, ProfileFileWatcher> _fileWatchers = new();
+    private Dictionary<string, List<ProfileFileWatcher>> _fileWatchers = new();
     private (DiscordRpcClient? Client, DiscordRpcReadDto? ClientInfo)? _discordRpcClient;
 
     public ApiProcedures(HttpClient httpClient, OsType osType)
@@ -116,15 +116,27 @@ public class ApiProcedures
         ProfileReadInfoDto profile,
         List<ProfileFileReadDto> allowFiles, string profilePath)
     {
-        if (_fileWatchers.TryGetValue(profile.ProfileName, out var fileWatcher))
+        if (_fileWatchers.TryGetValue(profile.ProfileName, out var watchers))
         {
-            fileWatcher.Process = process;
-            fileWatcher.AllowFiles = allowFiles;
+            foreach (var fileWatcher in watchers)
+            {
+                fileWatcher.Process = process;
+                fileWatcher.AllowFiles = allowFiles;
+            }
         }
         else
         {
-            _fileWatchers[profile.ProfileName] = new ProfileFileWatcher($"{profilePath}", profile.Files, process);
-            _fileWatchers[profile.ProfileName].FileAdded += (sender, args) => FileAdded?.Invoke(sender, args);
+            var modsWatcher = new ProfileFileWatcher(Path.Combine(profilePath, "mods"), profile.Files, process);
+            var assetsWatcher = new ProfileFileWatcher(Path.Combine(profilePath, "assets", "skins"), profile.Files, process, false);
+
+            modsWatcher.FileAdded += (sender, args) => FileAdded?.Invoke(sender, args);
+            assetsWatcher.FileAdded += (sender, filePath) => FileAdded?.Invoke(sender, filePath);
+
+            _fileWatchers[profile.ProfileName] =
+            [
+                modsWatcher,
+                assetsWatcher
+            ];
         }
     }
 

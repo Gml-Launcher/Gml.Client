@@ -9,7 +9,7 @@ public class ProfileFileWatcher
     private List<ProfileFileReadDto> _allowedFiles;
     private Process _process;
     private readonly FileSystemWatcher _fileSystemWatcher;
-    private readonly string _modsPath;
+    private readonly bool _needKill;
     internal event EventHandler<string>? FileAdded;
 
     public Process Process
@@ -24,23 +24,22 @@ public class ProfileFileWatcher
         set => _allowedFiles = value;
     }
 
-    public ProfileFileWatcher(string directory, List<ProfileFileReadDto> allowedFiles, Process process)
+    public ProfileFileWatcher(string directory, List<ProfileFileReadDto> allowedFiles, Process process, bool needKill = true)
     {
         _directory = directory;
+        _needKill = needKill;
 
-        _modsPath = Path.Combine(directory, "mods");
-
-        if (!Directory.Exists(_modsPath))
+        if (!Directory.Exists(directory))
         {
-            Directory.CreateDirectory(_modsPath);
+            Directory.CreateDirectory(directory);
         }
         _allowedFiles = allowedFiles;
         _process = process;
         _fileSystemWatcher = new FileSystemWatcher
         {
-            Path = _modsPath,
+            Path = directory,
             IncludeSubdirectories = false,
-            EnableRaisingEvents = true,
+            EnableRaisingEvents = true
         };
 
         _fileSystemWatcher.Created += OnNewFileCreated;
@@ -49,10 +48,13 @@ public class ProfileFileWatcher
 
     private void OnNewFileCreated(object sender, FileSystemEventArgs e)
     {
-        if (!e.FullPath.StartsWith(_modsPath) || _allowedFiles.Any(c => e.FullPath == Path.Combine(_directory, c.Directory))) return;
+        if (!e.FullPath.StartsWith(_directory) || _allowedFiles.Any(c => e.FullPath == Path.Combine(_directory, c.Directory))) return;
 
         FileAdded?.Invoke(this, e.FullPath);
 
-        _process.Kill();
+        if (_needKill)
+        {
+            _process.Kill();
+        }
     }
 }
