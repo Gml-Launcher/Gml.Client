@@ -1,16 +1,16 @@
-using Newtonsoft.Json;
+using System.Text.Json.Serialization;
 
 namespace Gml.Web.Api.Dto.Minecraft.AuthLib;
 
 public class PropertyTextures
 {
-    [JsonProperty("timestamp")] public long Timestamp { get; set; }
+    [JsonPropertyName("timestamp")] public long Timestamp { get; set; }
 
-    [JsonProperty("profileId")] public string ProfileId { get; set; }
+    [JsonPropertyName("profileId")] public string ProfileId { get; set; }
 
-    [JsonProperty("profileName")] public string ProfileName { get; set; }
+    [JsonPropertyName("profileName")] public string ProfileName { get; set; }
 
-    [JsonProperty("textures")] public Textures Textures { get; set; }
+    [JsonPropertyName("textures")] public Textures Textures { get; set; }
 
-    [JsonProperty("signatureRequired")] public bool SignatureRequired { get; set; }
+    [JsonPropertyName("signatureRequired")] public bool SignatureRequired { get; set; }
 }
