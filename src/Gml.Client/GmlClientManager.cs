@@ -58,8 +58,8 @@ public class GmlClientManager : IGmlClientManager
         await _apiProcedures.DownloadFiles(_installationDirectory, updateFiles.ToArray(), 16, cancellationToken);
     }
 
-    public Task<(IUser User, string Message, IEnumerable<string> Details)> Auth(string login, string password)
-        => _apiProcedures.Auth(login, password);
+    public Task<(IUser User, string Message, IEnumerable<string> Details)> Auth(string login, string password, string hwid)
+        => _apiProcedures.Auth(login, password, hwid);
 
     public Task ClearFiles(ProfileReadInfoDto profile) => _systemProcedures.RemoveFiles(profile);
 

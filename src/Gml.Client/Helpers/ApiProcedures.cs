@@ -166,7 +166,7 @@ public class ApiProcedures
         return string.Empty;
     }
 
-    public async Task<(IUser User, string Message, IEnumerable<string> Details)> Auth(string login, string password)
+    public async Task<(IUser User, string Message, IEnumerable<string> Details)> Auth(string login, string password, string hwid)
     {
         var model = JsonConvert.SerializeObject(new BaseUserPassword
         {
@@ -180,9 +180,9 @@ public class ApiProcedures
         };
 
         var data = new StringContent(model, Encoding.UTF8, "application/json");
-
+        _httpClient.DefaultRequestHeaders.Add("X-HWID", hwid);
         var response = await _httpClient.PostAsync("/api/v1/integrations/auth/signin", data).ConfigureAwait(false);
-
+        _httpClient.DefaultRequestHeaders.Remove("X-HWID");
         authUser.IsAuth = response.IsSuccessStatusCode;
 
         var content = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
