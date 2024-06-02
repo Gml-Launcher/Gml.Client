@@ -11,7 +11,6 @@ using Gml.Web.Api.Dto.Profile;
 using Gml.Web.Api.Dto.Texture;
 using Gml.Web.Api.Dto.User;
 using Newtonsoft.Json;
-using static System.OperatingSystem;
 
 namespace Gml.Client.Helpers;
 
@@ -70,15 +69,7 @@ public class ApiProcedures
         var content = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
 
         Debug.Write("Profile loaded");
-
-        var dto = JsonConvert.DeserializeObject<ResponseMessage<ProfileReadInfoDto?>>(content);
-
-        Enum.TryParse<OsType>(profileCreateInfoDto.OsType, out var osType);
-
-        if (dto?.Data != null)
-            dto.Data.OsType = osType;
-
-        return dto;
+        return JsonConvert.DeserializeObject<ResponseMessage<ProfileReadInfoDto?>>(content);
     }
 
     public Task<Process> GetProcess(ProfileReadInfoDto profileDto, string installationDirectory)
@@ -117,8 +108,6 @@ public class ApiProcedures
             Arguments = profileDto.Arguments,
             WorkingDirectory = profilePath
         };
-
-        ChangeProcessRules(process.StartInfo.FileName, profileDto.OsType);
 
         InitializeFileWatchers(process, profileDto, GetAllowFiles(profileDto), profilePath);
         return process;
@@ -162,8 +151,7 @@ public class ApiProcedures
         else
         {
             var modsWatcher = new ProfileFileWatcher(Path.Combine(profilePath, "mods"), profile.Files, process);
-            var assetsWatcher = new ProfileFileWatcher(Path.Combine(profilePath, "assets", "skins"), profile.Files,
-                process, false);
+            var assetsWatcher = new ProfileFileWatcher(Path.Combine(profilePath, "assets", "skins"), profile.Files, process, false);
 
             modsWatcher.FileAdded += (sender, args) => FileAdded?.Invoke(sender, args);
             assetsWatcher.FileAdded += (sender, filePath) => FileAdded?.Invoke(sender, filePath);
