@@ -10,8 +10,8 @@ public class Tests
     [SetUp]
     public void Setup()
     {
-        var localDirectory = "C:\\Users\\aa.terentiev\\AppData\\Roaming\\AztexClient";
-        var baseAddress = "http://192.168.31.49:5000";
+        var localDirectory = Environment.CurrentDirectory;
+        var baseAddress = "https://gmlb.recloud.tech";
 
         Client = new GmlClientManager(baseAddress, localDirectory, "GmlLauncher", OsType.Linux);
 
