@@ -1,6 +1,4 @@
 using System.Security.Cryptography;
-using static System.OperatingSystem;
-
 
 namespace Gml.Client.Helpers;
 

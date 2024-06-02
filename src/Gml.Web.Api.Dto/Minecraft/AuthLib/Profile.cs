@@ -1,13 +1,13 @@
 using System.Collections.Generic;
-using Newtonsoft.Json;
+using System.Text.Json.Serialization;
 
 namespace Gml.Web.Api.Dto.Minecraft.AuthLib;
 
 public class Profile
 {
-    [JsonProperty("id")] public string Id { get; set; }
+    [JsonPropertyName("id")] public string Id { get; set; }
 
-    [JsonProperty("name")] public string Name { get; set; }
+    [JsonPropertyName("name")] public string Name { get; set; }
 
-    [JsonProperty("properties")] public List<ProfileProperties> Properties { get; set; }
+    [JsonPropertyName("properties")] public List<ProfileProperties> Properties { get; set; }
 }
