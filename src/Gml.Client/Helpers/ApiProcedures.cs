@@ -1,4 +1,4 @@
-﻿using System.ComponentModel;
+using System.ComponentModel;
 using System.Diagnostics;
 using System.Text;
 using DiscordRPC;
@@ -11,7 +11,6 @@ using Gml.Web.Api.Dto.Profile;
 using Gml.Web.Api.Dto.Texture;
 using Gml.Web.Api.Dto.User;
 using Newtonsoft.Json;
-using System.Text.Json;
 using static System.OperatingSystem;
 
 namespace Gml.Client.Helpers;
@@ -52,7 +51,7 @@ public class ApiProcedures
 
         var content = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
 
-        return JsonSerializer.Deserialize<ResponseMessage<List<ProfileReadDto>>>(content)
+        return JsonConvert.DeserializeObject<ResponseMessage<List<ProfileReadDto>>>(content)
                ?? new ResponseMessage<List<ProfileReadDto>>();
     }
 
@@ -190,7 +189,7 @@ public class ApiProcedures
             if (request.IsSuccessStatusCode)
             {
                 var content = await request.Content.ReadAsStringAsync().ConfigureAwait(false);
-                var url = JsonSerializer.Deserialize<ResponseMessage<UrlServiceDto>>(content);
+                var url = JsonConvert.DeserializeObject<ResponseMessage<UrlServiceDto>>(content);
 
                 return url?.Data?.Url ?? string.Empty;
             }
@@ -203,7 +202,7 @@ public class ApiProcedures
         return string.Empty;
     }
 
-  public async Task<(IUser User, string Message, IEnumerable<string> Details)> Auth(string login, string password,
+    public async Task<(IUser User, string Message, IEnumerable<string> Details)> Auth(string login, string password,
         string hwid)
     {
         var model = JsonConvert.SerializeObject(new BaseUserPassword
@@ -386,7 +385,7 @@ public class ApiProcedures
 
         var content = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
 
-        var result = JsonSerializer.Deserialize<ResponseMessage<DiscordRpcReadDto?>>(content);
+        var result = JsonConvert.DeserializeObject<ResponseMessage<DiscordRpcReadDto?>>(content);
 
         return result?.Data;
     }
