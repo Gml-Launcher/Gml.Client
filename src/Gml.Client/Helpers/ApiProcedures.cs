@@ -11,6 +11,7 @@ using Gml.Web.Api.Dto.Profile;
 using Gml.Web.Api.Dto.Texture;
 using Gml.Web.Api.Dto.User;
 using Newtonsoft.Json;
+using static System.OperatingSystem;
 
 namespace Gml.Client.Helpers;
 
@@ -69,7 +70,15 @@ public class ApiProcedures
         var content = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
 
         Debug.Write("Profile loaded");
-        return JsonConvert.DeserializeObject<ResponseMessage<ProfileReadInfoDto?>>(content);
+
+        var dto = JsonConvert.DeserializeObject<ResponseMessage<ProfileReadInfoDto?>>(content);
+
+        Enum.TryParse<OsType>(profileCreateInfoDto.OsType, out var osType);
+
+        if (dto?.Data != null)
+            dto.Data.OsType = osType;
+
+        return dto;
     }
 
     public Task<Process> GetProcess(ProfileReadInfoDto profileDto, string installationDirectory)
@@ -86,7 +95,8 @@ public class ApiProcedures
 
     private Process GetStartProcess(ProfileReadInfoDto profileDto, string installationDirectory)
     {
-        var profilePath = installationDirectory + @"\clients\" + profileDto.ProfileName;
+        // var profilePath = installationDirectory + @"\clients\" + profileDto.ProfileName;
+        var profilePath = Path.Combine(installationDirectory, "clients", profileDto.ProfileName);
 
         var parameters = new Dictionary<string, string>
         {
@@ -108,8 +118,33 @@ public class ApiProcedures
             WorkingDirectory = profilePath
         };
 
+        ChangeProcessRules(process.StartInfo.FileName, profileDto.OsType);
+
         InitializeFileWatchers(process, profileDto, GetAllowFiles(profileDto), profilePath);
         return process;
+    }
+
+    private void ChangeProcessRules(string startInfoFileName, OsType profileDtoOsType)
+    {
+        switch (profileDtoOsType)
+        {
+            case OsType.Undefined:
+                break;
+            case OsType.Linux:
+                var chmodStartInfo = new ProcessStartInfo
+                {
+                    FileName = "/bin/bash",
+                    Arguments = $"-c \"chmod +x {startInfoFileName}\""
+                };
+                Process.Start(chmodStartInfo);
+                break;
+            case OsType.OsX:
+                break;
+            case OsType.Windows:
+                break;
+            default:
+                throw new ArgumentOutOfRangeException(nameof(profileDtoOsType), profileDtoOsType, null);
+        }
     }
 
     private void InitializeFileWatchers(Process process,
@@ -127,7 +162,8 @@ public class ApiProcedures
         else
         {
             var modsWatcher = new ProfileFileWatcher(Path.Combine(profilePath, "mods"), profile.Files, process);
-            var assetsWatcher = new ProfileFileWatcher(Path.Combine(profilePath, "assets", "skins"), profile.Files, process, false);
+            var assetsWatcher = new ProfileFileWatcher(Path.Combine(profilePath, "assets", "skins"), profile.Files,
+                process, false);
 
             modsWatcher.FileAdded += (sender, args) => FileAdded?.Invoke(sender, args);
             assetsWatcher.FileAdded += (sender, filePath) => FileAdded?.Invoke(sender, filePath);
@@ -166,7 +202,8 @@ public class ApiProcedures
         return string.Empty;
     }
 
-    public async Task<(IUser User, string Message, IEnumerable<string> Details)> Auth(string login, string password, string hwid)
+    public async Task<(IUser User, string Message, IEnumerable<string> Details)> Auth(string login, string password,
+        string hwid)
     {
         var model = JsonConvert.SerializeObject(new BaseUserPassword
         {
@@ -212,7 +249,8 @@ public class ApiProcedures
 
         var throttler = new SemaphoreSlim(loadFilesPartCount);
 
-        var tasks = files.Select(file => DownloadFileWithRetry(installationDirectory, file, throttler, cancellationToken));
+        var tasks = files.Select(file =>
+            DownloadFileWithRetry(installationDirectory, file, throttler, cancellationToken));
 
         // Исполнение всех задач.
         await Task.WhenAll(tasks);
@@ -250,7 +288,8 @@ public class ApiProcedures
                     .TrimStart(Path.DirectorySeparatorChar);
             }
 
-            string localPath = Path.Combine(installationDirectory, file.Directory);
+            string localPath = Path.Combine(installationDirectory,
+                file.Directory.TrimStart(Path.DirectorySeparatorChar).TrimStart('\\'));
             await EnsureDirectoryExists(localPath);
 
             var url = $"{_httpClient.BaseAddress.AbsoluteUri}api/v1/file/{file.Hash}";

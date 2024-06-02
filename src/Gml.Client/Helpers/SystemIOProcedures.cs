@@ -33,7 +33,7 @@ public class SystemIoProcedures
                 downloadingFile.Directory = downloadingFile.Directory.Replace('/', Path.DirectorySeparatorChar).TrimStart(Path.DirectorySeparatorChar);
             }
 
-            string localPath = Path.Combine(installationDirectory, downloadingFile.Directory);
+            string localPath = Path.Combine(installationDirectory, downloadingFile.Directory.TrimStart('\\').TrimStart(Path.DirectorySeparatorChar));
 
             if (FileExists(localPath))
             {
@@ -50,7 +50,7 @@ public class SystemIoProcedures
             }
         });
 
-        return errorFiles.ToList();
+        return errorFiles.OrderByDescending(c => c.Size).ToList();
     }
 
     private static bool FileExists(string path)
@@ -118,6 +118,6 @@ public class SystemIoProcedures
             file.Directory = file.Directory.Replace('/', Path.DirectorySeparatorChar).TrimStart(Path.DirectorySeparatorChar);
         }
 
-        return Path.Combine(installationDirectory, file.Directory);
+        return Path.Combine(installationDirectory, file.Directory.TrimStart('\\').TrimStart(Path.DirectorySeparatorChar));
     }
 }
