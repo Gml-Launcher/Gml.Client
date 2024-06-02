@@ -10,7 +10,7 @@ using Gml.Web.Api.Dto.Messages;
 using Gml.Web.Api.Dto.Profile;
 using Gml.Web.Api.Dto.Texture;
 using Gml.Web.Api.Dto.User;
-using Newtonsoft.Json;
+using System.Text.Json;
 
 namespace Gml.Client.Helpers;
 
@@ -50,14 +50,14 @@ public class ApiProcedures
 
         var content = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
 
-        return JsonConvert.DeserializeObject<ResponseMessage<List<ProfileReadDto>>>(content)
+        return JsonSerializer.Deserialize<ResponseMessage<List<ProfileReadDto>>>(content)
                ?? new ResponseMessage<List<ProfileReadDto>>();
     }
 
     public async Task<ResponseMessage<ProfileReadInfoDto?>?> GetProfileInfo(ProfileCreateInfoDto profileCreateInfoDto)
     {
         Debug.Write("Get profile info");
-        var model = JsonConvert.SerializeObject(profileCreateInfoDto);
+        var model = JsonSerializer.Serialize(profileCreateInfoDto);
 
         var data = new StringContent(model, Encoding.UTF8, "application/json");
 
@@ -69,7 +69,7 @@ public class ApiProcedures
         var content = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
 
         Debug.Write("Profile loaded");
-        return JsonConvert.DeserializeObject<ResponseMessage<ProfileReadInfoDto?>>(content);
+        return JsonSerializer.Deserialize<ResponseMessage<ProfileReadInfoDto?>>(content);
     }
 
     public Task<Process> GetProcess(ProfileReadInfoDto profileDto, string installationDirectory)
@@ -153,7 +153,7 @@ public class ApiProcedures
             if (request.IsSuccessStatusCode)
             {
                 var content = await request.Content.ReadAsStringAsync().ConfigureAwait(false);
-                var url = JsonConvert.DeserializeObject<ResponseMessage<UrlServiceDto>>(content);
+                var url = JsonSerializer.Deserialize<ResponseMessage<UrlServiceDto>>(content);
 
                 return url?.Data?.Url ?? string.Empty;
             }
@@ -166,9 +166,9 @@ public class ApiProcedures
         return string.Empty;
     }
 
-    public async Task<(IUser User, string Message, IEnumerable<string> Details)> Auth(string login, string password)
+    public async Task<(IUser User, string Message, IEnumerable<string> Details)> Auth(string login, string password, string hwid)
     {
-        var model = JsonConvert.SerializeObject(new BaseUserPassword
+        var model = JsonSerializer.Serialize(new BaseUserPassword
         {
             Login = login,
             Password = password
@@ -180,14 +180,14 @@ public class ApiProcedures
         };
 
         var data = new StringContent(model, Encoding.UTF8, "application/json");
-
+        _httpClient.DefaultRequestHeaders.Add("X-HWID", hwid);
         var response = await _httpClient.PostAsync("/api/v1/integrations/auth/signin", data).ConfigureAwait(false);
-
+        _httpClient.DefaultRequestHeaders.Remove("X-HWID");
         authUser.IsAuth = response.IsSuccessStatusCode;
 
         var content = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
 
-        var dto = JsonConvert.DeserializeObject<ResponseMessage<AuthUser>>(content);
+        var dto = JsonSerializer.Deserialize<ResponseMessage<AuthUser>>(content);
 
         if (response.IsSuccessStatusCode && dto != null)
         {
@@ -346,7 +346,7 @@ public class ApiProcedures
 
         var content = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
 
-        var result = JsonConvert.DeserializeObject<ResponseMessage<DiscordRpcReadDto?>>(content);
+        var result = JsonSerializer.Deserialize<ResponseMessage<DiscordRpcReadDto?>>(content);
 
         return result?.Data;
     }

@@ -1,14 +1,14 @@
-using Newtonsoft.Json;
+using System.Text.Json.Serialization;
 
 namespace Gml.Web.Api.Dto.Minecraft.AuthLib;
 
 public class ProfileProperties
 {
-    [JsonProperty("name")] public string Name { get; } = "textures";
+    [JsonPropertyName("name")] public string Name { get; } = "textures";
 
-    [JsonProperty("value")] public string Value { get; set; }
+    [JsonPropertyName("value")] public string Value { get; set; }
 
-    [JsonProperty("signature")]
+    [JsonPropertyName("signature")]
     public string Signature { get; set; } =
         "Cg=="; //Не используется, потому что это используется с подписью(сертификаты)
 }
