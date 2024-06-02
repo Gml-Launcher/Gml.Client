@@ -13,7 +13,7 @@ public class Tests
         var localDirectory = Environment.CurrentDirectory;
         var baseAddress = "https://gmlb.recloud.tech";
 
-        Client = new GmlClientManager(baseAddress, localDirectory, "GmlLauncher", OsType.Linux);
+        Client = new GmlClientManager(localDirectory, baseAddress, "GmlLauncher", OsType.Linux);
 
         Client.ProgressChanged += (sender, args) =>
         {
