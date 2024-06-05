@@ -1,10 +1,10 @@
-using System.Text.Json.Serialization;
+using Newtonsoft.Json;
 
 namespace Gml.Web.Api.Dto.Minecraft.AuthLib;
 
 public class Textures
 {
-    [JsonPropertyName("SKIN")] public SkinCape Skin { get; set; }
+    [JsonProperty("SKIN")] public SkinCape Skin { get; set; }
 
-    [JsonPropertyName("CAPE")] public SkinCape Cape { get; set; }
+    [JsonProperty("CAPE")] public SkinCape Cape { get; set; }
 }

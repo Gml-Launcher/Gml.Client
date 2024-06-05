@@ -1,8 +1,8 @@
-using System.Text.Json.Serialization;
+using Newtonsoft.Json;
 
 namespace Gml.Web.Api.Dto.Minecraft.AuthLib;
 
 public class SkinCape
 {
-    [JsonPropertyName("url")] public string Url { get; set; }
+    [JsonProperty("url")] public string Url { get; set; }
 }
