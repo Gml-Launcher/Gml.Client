@@ -8,5 +8,6 @@ namespace GmlCore.Interfaces.Procedures
     public interface IFileStorageProcedures
     {
         Task<IFileInfo?> DownloadFileStream(string fileHash, Stream outputStream, IHeaderDictionary headers);
+        Task<string> LoadFile(Stream fileStream);
     }
 }

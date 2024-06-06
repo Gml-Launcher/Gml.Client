@@ -13,6 +13,7 @@ public class ProfileReadInfoDto
     public string IconBase64 { get; set; }
     public string Description { get; set; }
     public string Arguments { get; set; }
+    public string JvmArguments { get; set; }
     public bool HasUpdate { get; set; }
     public List<ProfileFileReadDto> Files { get; set; }
     public List<ProfileFileReadDto> WhiteListFiles { get; set; }

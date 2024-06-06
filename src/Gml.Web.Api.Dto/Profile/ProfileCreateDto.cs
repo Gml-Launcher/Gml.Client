@@ -1,5 +1,6 @@
 using GmlCore.Interfaces.Enums;
-using System.Text.Json.Serialization;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Converters;
 
 namespace Gml.Web.Api.Dto.Profile;
 
@@ -9,7 +10,7 @@ public class ProfileCreateDto
     public string Description { get; set; } = null!;
     public string Version { get; set; } = null!;
 
-    [JsonConverter(typeof(JsonStringEnumConverter))]
+    [JsonConverter(typeof(StringEnumConverter))]
     public GameLoader GameLoader { get; set; }
 
     public string IconBase64 { get; set; } = null!;

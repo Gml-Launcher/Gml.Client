@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using System.ComponentModel;
 using System.Diagnostics;
 using System.Threading.Tasks;
@@ -5,6 +6,7 @@ using Gml.Web.Api.Domains.System;
 using GmlCore.Interfaces.Enums;
 using GmlCore.Interfaces.Launcher;
 using GmlCore.Interfaces.User;
+using GmlCore.Interfaces.Versions;
 
 namespace GmlCore.Interfaces.Procedures
 {
@@ -25,5 +27,7 @@ namespace GmlCore.Interfaces.Procedures
 
         Task<bool> CheckClientExists(IGameProfile baseProfile);
         Task<bool> CheckOsTypeLoaded(IGameProfile baseProfile, IStartupOptions startupOptions);
+        Task<IEnumerable<IVersion>> GetAllVersions();
+        Task<IEnumerable<string>> GetAllowVersions(GameLoader gameLoader, string? minecraftVersion);
     }
 }

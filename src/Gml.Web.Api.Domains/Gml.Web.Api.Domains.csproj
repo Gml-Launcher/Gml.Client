@@ -6,7 +6,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\GmlCore.Interfaces\GmlCore.Interfaces.csproj" />
+    <ProjectReference Include="..\Gml.Core.Interfaces\Gml.Core.Interfaces.csproj" />
   </ItemGroup>
 
 </Project>
