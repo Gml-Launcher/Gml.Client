@@ -1,5 +1,6 @@
 using System.ComponentModel;
 using System.Diagnostics;
+using System.Reactive.Subjects;
 using System.Text;
 using DiscordRPC;
 using Gml.Client.Models;
@@ -26,12 +27,12 @@ public class ApiProcedures
     private int _finishedFilesCount;
     private int _progress;
 
-    internal event EventHandler<ProgressChangedEventArgs>? ProgressChanged;
+    private ISubject<int> _progressChanged = new Subject<int>();
     internal event EventHandler<string>? FileAdded;
 
     private Dictionary<string, List<ProfileFileWatcher>> _fileWatchers = new();
     private (DiscordRpcClient? Client, DiscordRpcReadDto? ClientInfo)? _discordRpcClient;
-
+    public IObservable<int> ProgressChanged => _progressChanged;
     public ApiProcedures(HttpClient httpClient, OsType osType)
     {
         _httpClient = httpClient;
@@ -321,7 +322,7 @@ public class ApiProcedures
 
             _finishedFilesCount++;
             _progress = Convert.ToInt16(_finishedFilesCount * 100 / _progressFilesCount);
-            ProgressChanged?.Invoke(this, new ProgressChangedEventArgs(_progress, null));
+            _progressChanged.OnNext(_progress);
             Debug.WriteLine($"{_finishedFilesCount}/{_progressFilesCount}");
         }
         catch (Exception ex)

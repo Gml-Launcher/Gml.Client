@@ -35,7 +35,7 @@ public class GmlClientManager : IGmlClientManager
             BaseAddress = new Uri(gateWay)
         }, osType);
 
-        _apiProcedures.ProgressChanged += (sender, args) => ProgressChanged?.Invoke(sender, args);
+        _apiProcedures.ProgressChanged.Subscribe(_progressChanged);
 
         ProjectName = projectName;
     }

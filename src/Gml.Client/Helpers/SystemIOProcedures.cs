@@ -50,7 +50,7 @@ public class SystemIoProcedures
             }
         });
 
-        return errorFiles.OrderByDescending(c => c.Size).ToList();
+        return errorFiles.OrderBy(c => c.Size).ToList();
     }
 
     private static bool FileExists(string path)
