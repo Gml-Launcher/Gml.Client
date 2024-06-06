@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using System.ComponentModel;
+using System.IO;
 using System.Threading.Tasks;
 using Gml.Web.Api.Domains.System;
 using GmlCore.Interfaces.Enums;
@@ -39,7 +40,9 @@ namespace GmlCore.Interfaces.Procedures
         Task PackProfile(IGameProfile baseProfile);
         Task AddFileToWhiteList(IGameProfile profile, IFileInfo file);
         Task RemoveFileFromWhiteList(IGameProfile profile, IFileInfo file);
-        Task UpdateProfile(IGameProfile profile, string newProfileName, string newIcon, string newDescription);
+        Task UpdateProfile(IGameProfile profile, string newProfileName, Stream? icon, Stream? backgroundImage,
+            string updateDtoDescription, bool isEnabled,
+            string jvmArguments);
         Task<string[]> InstallAuthLib(IGameProfile profile);
         Task<IGameProfileInfo?> GetCacheProfile(IGameProfile baseProfile);
         Task SetCacheProfile(IGameProfileInfo profile);

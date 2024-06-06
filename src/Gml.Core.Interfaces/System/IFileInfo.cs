@@ -1,3 +1,5 @@
+using System.IO;
+
 namespace GmlCore.Interfaces.System
 {
     public interface IFileInfo

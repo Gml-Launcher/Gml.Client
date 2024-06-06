@@ -15,11 +15,11 @@ public class Tests
 
         Client = new GmlClientManager(localDirectory, baseAddress, "GmlLauncher", OsType.Linux);
 
-        Client.ProgressChanged += (sender, args) =>
+        Client.ProgressChanged.Subscribe(percentage =>
         {
-            Console.WriteLine(args.ProgressPercentage);
-            Debug.WriteLine(args.ProgressPercentage);
-        };
+            Console.WriteLine(percentage);
+            Debug.WriteLine(percentage);
+        });
     }
 
     [Test]

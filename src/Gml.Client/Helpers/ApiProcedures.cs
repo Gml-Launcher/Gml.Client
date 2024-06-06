@@ -1,8 +1,10 @@
 using System.ComponentModel;
 using System.Diagnostics;
+using System.Reactive.Subjects;
 using System.Text;
 using DiscordRPC;
 using Gml.Client.Models;
+using Gml.Web.Api.Domains.Launcher;
 using Gml.Web.Api.Domains.System;
 using Gml.Web.Api.Dto.Files;
 using Gml.Web.Api.Dto.Integration;
@@ -10,6 +12,7 @@ using Gml.Web.Api.Dto.Messages;
 using Gml.Web.Api.Dto.Profile;
 using Gml.Web.Api.Dto.Texture;
 using Gml.Web.Api.Dto.User;
+using GmlCore.Interfaces.Storage;
 using Newtonsoft.Json;
 using static System.OperatingSystem;
 
@@ -24,12 +27,12 @@ public class ApiProcedures
     private int _finishedFilesCount;
     private int _progress;
 
-    internal event EventHandler<ProgressChangedEventArgs>? ProgressChanged;
+    private ISubject<int> _progressChanged = new Subject<int>();
     internal event EventHandler<string>? FileAdded;
 
     private Dictionary<string, List<ProfileFileWatcher>> _fileWatchers = new();
     private (DiscordRpcClient? Client, DiscordRpcReadDto? ClientInfo)? _discordRpcClient;
-
+    public IObservable<int> ProgressChanged => _progressChanged;
     public ApiProcedures(HttpClient httpClient, OsType osType)
     {
         _httpClient = httpClient;
@@ -275,6 +278,21 @@ public class ApiProcedures
         }
     }
 
+    internal async Task<(Stream Stream, long Bytes)> GetNewLauncher(string guid)
+    {
+        var url = $"{_httpClient.BaseAddress.AbsoluteUri}api/v1/file/{guid}";
+
+        var response = await _httpClient.GetAsync(url, HttpCompletionOption.ResponseHeadersRead);
+
+        if (!response.IsSuccessStatusCode)
+            throw new Exception("Failed to download file");
+
+        var bytes = response.Content.Headers.ContentLength.GetValueOrDefault(); // Здесь мы получаем размер потока
+        var stream = await response.Content.ReadAsStreamAsync(); // Здесь мы получаем поток
+
+        return (stream, bytes);
+    }
+
     private async Task DownloadFile(string installationDirectory, ProfileFileReadDto file, SemaphoreSlim throttler,
         CancellationToken cancellationToken)
     {
@@ -304,7 +322,7 @@ public class ApiProcedures
 
             _finishedFilesCount++;
             _progress = Convert.ToInt16(_finishedFilesCount * 100 / _progressFilesCount);
-            ProgressChanged?.Invoke(this, new ProgressChangedEventArgs(_progress, null));
+            _progressChanged.OnNext(_progress);
             Debug.WriteLine($"{_finishedFilesCount}/{_progressFilesCount}");
         }
         catch (Exception ex)
@@ -388,5 +406,19 @@ public class ApiProcedures
         var result = JsonConvert.DeserializeObject<ResponseMessage<DiscordRpcReadDto?>>(content);
 
         return result?.Data;
+    }
+
+    public async Task<IVersionFile?> GetActualVersion(OsType osType)
+    {
+        var response = await _httpClient.GetAsync($"/api/v1/launcher").ConfigureAwait(false);
+
+        if (!response.IsSuccessStatusCode)
+            return null;
+
+        var content = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
+
+        var result = JsonConvert.DeserializeObject<ResponseMessage<Dictionary<OsType, LauncherVersion?>?>>(content);
+
+        return result?.Data?[osType];
     }
 }

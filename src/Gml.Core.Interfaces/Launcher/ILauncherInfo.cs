@@ -9,6 +9,7 @@ namespace GmlCore.Interfaces.Launcher
         public string BaseDirectory { get; }
         public string InstallationDirectory { get; }
         public IStorageSettings StorageSettings { get; set; }
+        IVersionFile? ActualLauncherVersion { get; set; }
         void UpdateSettings(StorageType storageType, string storageHost, string storageLogin, string storagePassword);
     }
 }
