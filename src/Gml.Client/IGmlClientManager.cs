@@ -8,7 +8,7 @@ using GmlCore.Interfaces.Storage;
 
 namespace Gml.Client;
 
-public interface IGmlClientManager
+public interface IGmlClientManager : IDisposable
 {
     IObservable<int> ProgressChanged { get; }
     public string ProjectName { get; }
@@ -23,4 +23,6 @@ public interface IGmlClientManager
     Task<IVersionFile?> GetActualVersion(OsType osType);
     Task UpdateCurrentLauncher((IVersionFile? ActualVersion, bool IsActuallVersion) versionInfo, OsType osType,
         string originalFileName);
+
+    Task OpenServerConnection(IUser user);
 }
