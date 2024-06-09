@@ -27,7 +27,6 @@ public class GmlClientManager : IGmlClientManager
     private readonly SystemIoProcedures _systemProcedures;
     private ISubject<int> _progressChanged = new Subject<int>();
     private SignalRConnect? _launchbackendConnection;
-    private IDisposable _updateInfoTimer;
 
     public GmlClientManager(string installationDirectory, string gateWay, string projectName, OsType osType)
     {
@@ -145,11 +144,6 @@ public class GmlClientManager : IGmlClientManager
     {
         _launchbackendConnection = new SignalRConnect("ws://192.168.31.199:5000/ws/launcher", user);
         await _launchbackendConnection.BuildAndConnect();
-        await _launchbackendConnection.OnStartup();
-
-        _updateInfoTimer = Observable
-            .Interval(TimeSpan.FromSeconds(5))
-            .Subscribe(UpdateInfo);
     }
 
     private async void UpdateInfo(long _)
@@ -165,7 +159,6 @@ public class GmlClientManager : IGmlClientManager
     public static Task<string> GetSentryLink(string hostUrl) => ApiProcedures.GetSentryLink(hostUrl);
     void IDisposable.Dispose()
     {
-        _updateInfoTimer.Dispose();
         _launchbackendConnection?.Dispose();
     }
 }

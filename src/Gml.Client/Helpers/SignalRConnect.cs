@@ -50,24 +50,13 @@ public class SignalRConnect : IDisposable, IAsyncDisposable
 
         _hubConnection.On("RequestLauncherHash", async () =>
         {
-            await _hubConnection.SendAsync("ConfirmLauncherHash", _user.Name);
+            await _hubConnection.SendAsync("ConfirmLauncherHash", "hash");
         });
 
     }
 
-    public async Task OnStartup()
-    {
-        await _hubConnection.SendAsync("AddUserLauncher", _user.Name);
-    }
-
-    public async Task OnClose()
-    {
-        await _hubConnection.SendAsync("RemoveUserLauncher", _user.Name);
-    }
-
     public async ValueTask DisposeAsync()
     {
-        await OnClose();
         await _hubConnection.DisposeAsync();
     }
 
