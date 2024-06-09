@@ -1,6 +1,8 @@
 using System.ComponentModel;
 using System.Diagnostics;
 using System.Net.Mime;
+using System.Reactive.Concurrency;
+using System.Reactive.Linq;
 using System.Reactive.Subjects;
 using Gml.Client.Helpers;
 using Gml.Client.Models;
@@ -24,6 +26,7 @@ public class GmlClientManager : IGmlClientManager
     private readonly ApiProcedures _apiProcedures;
     private readonly SystemIoProcedures _systemProcedures;
     private ISubject<int> _progressChanged = new Subject<int>();
+    private SignalRConnect? _launchbackendConnection;
 
     public GmlClientManager(string installationDirectory, string gateWay, string projectName, OsType osType)
     {
@@ -119,11 +122,43 @@ public class GmlClientManager : IGmlClientManager
         await _apiProcedures.DownloadFiles(_installationDirectory, updateFiles.ToArray(), 16, cancellationToken);
     }
 
-    public Task<(IUser User, string Message, IEnumerable<string> Details)> Auth(string login, string password,
+    public async Task<(IUser User, string Message, IEnumerable<string> Details)> Auth(string login, string password,
         string hwid)
-        => _apiProcedures.Auth(login, password, hwid);
+    {
+        var user = await _apiProcedures.Auth(login, password, hwid);
+
+        if (user.User?.IsAuth == true)
+        {
+            if (_launchbackendConnection?.DisposeAsync().AsTask() is {} task)
+            {
+                await task;
+            }
+
+            await OpenServerConnection(user.User);
+        }
+
+        return user;
+    }
+
+    public async Task OpenServerConnection(IUser user)
+    {
+        _launchbackendConnection = new SignalRConnect("ws://192.168.31.199:5000/ws/launcher", user);
+        await _launchbackendConnection.BuildAndConnect();
+    }
+
+    private async void UpdateInfo(long _)
+    {
+        if (_launchbackendConnection is not null)
+        {
+            await _launchbackendConnection!.UpdateInfo();
+        }
+    }
 
     public Task ClearFiles(ProfileReadInfoDto profile) => _systemProcedures.RemoveFiles(profile);
 
     public static Task<string> GetSentryLink(string hostUrl) => ApiProcedures.GetSentryLink(hostUrl);
+    void IDisposable.Dispose()
+    {
+        _launchbackendConnection?.Dispose();
+    }
 }
