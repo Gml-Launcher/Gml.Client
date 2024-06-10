@@ -27,20 +27,32 @@ public class GmlClientManager : IGmlClientManager
     private readonly SystemIoProcedures _systemProcedures;
     private ISubject<int> _progressChanged = new Subject<int>();
     private SignalRConnect? _launchbackendConnection;
+    private readonly string _webSocketAddress;
 
     public GmlClientManager(string installationDirectory, string gateWay, string projectName, OsType osType)
     {
         _installationDirectory = installationDirectory;
 
+        var hostUri = new Uri(gateWay);
+
         _systemProcedures = new SystemIoProcedures(installationDirectory, osType);
         _apiProcedures = new ApiProcedures(new HttpClient
         {
-            BaseAddress = new Uri(gateWay)
+            BaseAddress = hostUri
         }, osType);
 
         _apiProcedures.ProgressChanged.Subscribe(_progressChanged);
 
         ProjectName = projectName;
+
+        if (hostUri.Scheme == Uri.UriSchemeHttps)
+        {
+            _webSocketAddress = "wss://" + hostUri.Host + (hostUri.IsDefaultPort ? "" : ":" + hostUri.Port);
+        }
+        else if (hostUri.Scheme == Uri.UriSchemeHttp)
+        {
+            _webSocketAddress = "ws://" + hostUri.Host + (hostUri.IsDefaultPort ? "" : ":" + hostUri.Port);
+        }
     }
 
     public Task<ResponseMessage<List<ProfileReadDto>>> GetProfiles()
@@ -142,7 +154,7 @@ public class GmlClientManager : IGmlClientManager
 
     public async Task OpenServerConnection(IUser user)
     {
-        _launchbackendConnection = new SignalRConnect("ws://192.168.31.199:5000/ws/launcher", user);
+        _launchbackendConnection = new SignalRConnect($"{_webSocketAddress}/ws/launcher", user);
         await _launchbackendConnection.BuildAndConnect();
     }
 
