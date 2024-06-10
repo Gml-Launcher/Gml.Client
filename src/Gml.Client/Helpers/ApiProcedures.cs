@@ -419,6 +419,11 @@ public class ApiProcedures
 
         var result = JsonConvert.DeserializeObject<ResponseMessage<Dictionary<OsType, LauncherVersion?>?>>(content);
 
-        return result?.Data?[osType];
+        if (result?.Data is null || result?.Data.Count == 0)
+        {
+            return null;
+        }
+
+        return result!.Data[osType];
     }
 }
