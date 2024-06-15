@@ -103,7 +103,7 @@ public class ApiProcedures
 
         var parameters = new Dictionary<string, string>
         {
-            { "{localPath}", profilePath },
+            { "{localPath}", installationDirectory },
             { "{authEndpoint}", $"{_httpClient.BaseAddress.AbsoluteUri}api/v1/integrations/authlib/minecraft" },
         };
 
@@ -116,7 +116,7 @@ public class ApiProcedures
 
         process.StartInfo = new ProcessStartInfo
         {
-            FileName = profileDto.JavaPath.Replace("{localPath}", profilePath),
+            FileName = profileDto.JavaPath.Replace("{localPath}", installationDirectory),
             Arguments = profileDto.Arguments,
             WorkingDirectory = profilePath
         };
