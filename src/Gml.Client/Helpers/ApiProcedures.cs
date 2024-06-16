@@ -122,7 +122,6 @@ public class ApiProcedures
         };
 
         ChangeProcessRules(process.StartInfo.FileName, profileDto.OsType);
-
         InitializeFileWatchers(process, profileDto, GetAllowFiles(profileDto), profilePath);
         return process;
     }
