@@ -122,8 +122,8 @@ public class GmlClientManager : IGmlClientManager
     public Task<ResponseMessage<ProfileReadInfoDto?>?> GetProfileInfo(ProfileCreateInfoDto profileDto)
         => _apiProcedures.GetProfileInfo(profileDto);
 
-    public Task<Process> GetProcess(ProfileReadInfoDto profileDto)
-        => _apiProcedures.GetProcess(profileDto, _installationDirectory);
+    public Task<Process> GetProcess(ProfileReadInfoDto profileDto, OsType osType)
+        => _apiProcedures.GetProcess(profileDto, _installationDirectory, osType);
 
     public async Task DownloadNotInstalledFiles(ProfileReadInfoDto profileInfo,
         CancellationToken cancellationToken = default)

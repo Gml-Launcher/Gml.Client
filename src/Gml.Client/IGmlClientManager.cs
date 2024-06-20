@@ -14,7 +14,7 @@ public interface IGmlClientManager : IDisposable
     public string ProjectName { get; }
     Task<ResponseMessage<List<ProfileReadDto>>> GetProfiles();
     Task<ResponseMessage<ProfileReadInfoDto?>?> GetProfileInfo(ProfileCreateInfoDto profileDto);
-    public Task<Process> GetProcess(ProfileReadInfoDto profileDto);
+    public Task<Process> GetProcess(ProfileReadInfoDto profileDto, OsType osType);
     Task DownloadNotInstalledFiles(ProfileReadInfoDto profileInfo, CancellationToken cancellationToken);
     Task<(IUser User, string Message, IEnumerable<string> Details)> Auth(string login, string password, string hwid);
     Task ClearFiles(ProfileReadInfoDto profile);

@@ -9,5 +9,6 @@ namespace GmlCore.Interfaces.Launcher
         public string BaseDirectory { get; }
         public string InstallationDirectory { get; }
         IStorageSettings StorageSettings { get; set; }
+        string SecurityKey { get; set; }
     }
 }
