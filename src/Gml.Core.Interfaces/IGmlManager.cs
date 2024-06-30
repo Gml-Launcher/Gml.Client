@@ -8,7 +8,6 @@ namespace GmlCore.Interfaces
     {
         public ILauncherInfo LauncherInfo { get; }
         public IProfileProcedures Profiles { get; }
-        public IGameDownloaderProcedures GameLoader { get; }
         public IFileStorageProcedures Files { get; }
         public IServicesIntegrationProcedures Integrations { get; }
         public IUserProcedures Users { get; }

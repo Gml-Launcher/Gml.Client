@@ -9,6 +9,7 @@ using Gml.Web.Api.Domains.System;
 using Gml.Web.Api.Dto.Files;
 using Gml.Web.Api.Dto.Integration;
 using Gml.Web.Api.Dto.Messages;
+using Gml.Web.Api.Dto.Player;
 using Gml.Web.Api.Dto.Profile;
 using Gml.Web.Api.Dto.Texture;
 using Gml.Web.Api.Dto.User;
@@ -76,17 +77,12 @@ public class ApiProcedures
 
         var dto = JsonConvert.DeserializeObject<ResponseMessage<ProfileReadInfoDto?>>(content);
 
-        Enum.TryParse<OsType>(profileCreateInfoDto.OsType, out var osType);
-
-        if (dto?.Data != null)
-            dto.Data.OsType = osType;
-
         return dto;
     }
 
-    public Task<Process> GetProcess(ProfileReadInfoDto profileDto, string installationDirectory)
+    public Task<Process> GetProcess(ProfileReadInfoDto profileDto, string installationDirectory, OsType osType)
     {
-        var process = GetStartProcess(profileDto, installationDirectory);
+        var process = GetStartProcess(profileDto, installationDirectory, osType);
 
         return Task.FromResult(process);
     }
@@ -96,7 +92,7 @@ public class ApiProcedures
         return profileDto.Files.Where(c => c.Directory.Contains(@"\mods\") || c.Directory.Contains("/mods/")).ToList();
     }
 
-    private Process GetStartProcess(ProfileReadInfoDto profileDto, string installationDirectory)
+    private Process GetStartProcess(ProfileReadInfoDto profileDto, string installationDirectory, OsType osType)
     {
         // var profilePath = installationDirectory + @"\clients\" + profileDto.ProfileName;
         var profilePath = Path.Combine(installationDirectory, "clients", profileDto.ProfileName);
@@ -121,8 +117,8 @@ public class ApiProcedures
             WorkingDirectory = profilePath
         };
 
-        ChangeProcessRules(process.StartInfo.FileName, profileDto.OsType);
-        InitializeFileWatchers(process, profileDto, GetAllowFiles(profileDto), profilePath);
+        ChangeProcessRules(process.StartInfo.FileName, osType);
+        InitializeFileWatchers(process, profileDto, GetAllowFiles(profileDto), profilePath, installationDirectory);
         return process;
     }
 
@@ -151,7 +147,8 @@ public class ApiProcedures
 
     private void InitializeFileWatchers(Process process,
         ProfileReadInfoDto profile,
-        List<ProfileFileReadDto> allowFiles, string profilePath)
+        List<ProfileFileReadDto> allowFiles,
+        string profilePath, string installationDirectory)
     {
         if (_fileWatchers.TryGetValue(profile.ProfileName, out var watchers))
         {
@@ -164,16 +161,16 @@ public class ApiProcedures
         else
         {
             var modsWatcher = new ProfileFileWatcher(Path.Combine(profilePath, "mods"), profile.Files, process);
-            var assetsWatcher = new ProfileFileWatcher(Path.Combine(profilePath, "assets", "skins"), profile.Files,
-                process, false);
+            // var assetsWatcher = new ProfileFileWatcher(
+            //     Path.Combine(installationDirectory, "assets", "skins"), profile.Files, process, false);
 
             modsWatcher.FileAdded += (sender, args) => FileAdded?.Invoke(sender, args);
-            assetsWatcher.FileAdded += (sender, filePath) => FileAdded?.Invoke(sender, filePath);
+            // assetsWatcher.FileAdded += (sender, filePath) => FileAdded?.Invoke(sender, filePath);
 
             _fileWatchers[profile.ProfileName] =
             [
                 modsWatcher,
-                assetsWatcher
+                // assetsWatcher
             ];
         }
     }
@@ -226,15 +223,15 @@ public class ApiProcedures
 
         var content = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
 
-        var dto = JsonConvert.DeserializeObject<ResponseMessage<AuthUser>>(content);
+        var dto = JsonConvert.DeserializeObject<ResponseMessage<PlayerReadDto>>(content);
 
         if (response.IsSuccessStatusCode && dto != null)
         {
             authUser.Uuid = dto.Data!.Uuid;
             authUser.AccessToken = dto.Data!.AccessToken;
-            authUser.Has2Fa = dto.Data!.Has2Fa;
+            authUser.Has2Fa = false; //dto.Data!.Has2Fa;
             authUser.ExpiredDate = dto.Data!.ExpiredDate;
-            authUser.TextureUrl = dto.Data.TextureUrl;
+            authUser.TextureUrl = dto.Data.TextureSkinUrl;
 
             return (authUser, string.Empty, Enumerable.Empty<string>());
         }

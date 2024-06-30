@@ -1,33 +1,26 @@
+using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
-using System.ComponentModel;
 using System.Diagnostics;
 using System.Threading.Tasks;
-using Gml.Web.Api.Domains.System;
 using GmlCore.Interfaces.Enums;
 using GmlCore.Interfaces.Launcher;
+using GmlCore.Interfaces.System;
 using GmlCore.Interfaces.User;
-using GmlCore.Interfaces.Versions;
 
 namespace GmlCore.Interfaces.Procedures
 {
     public interface IGameDownloaderProcedures
     {
-        public delegate void FileDownloadChanged(string file);
+        IObservable<double> FullPercentages { get; }
+        IObservable<double> LoadPercentages { get; }
+        IObservable<string> LoadLog { get;}
+        IObservable<Exception> LoadException { get;}
 
-        public delegate void ProgressDownloadChanged(object sender, ProgressChangedEventArgs e);
-
-        public event FileDownloadChanged FileChanged;
-        public event ProgressDownloadChanged ProgressChanged;
-
-        Task<string> DownloadGame(string version, GameLoader loader, OsType osType, string osArch);
-        Task<bool> IsFullLoaded(IGameProfile baseProfile, IStartupOptions startupOptions = null);
-
-        Task<Process> CreateProfileProcess(IGameProfile baseProfile, IStartupOptions startupOptions, IUser user,
-            bool forceDownload, string[]? jvmArguments);
-
-        Task<bool> CheckClientExists(IGameProfile baseProfile);
-        Task<bool> CheckOsTypeLoaded(IGameProfile baseProfile, IStartupOptions startupOptions);
-        Task<IEnumerable<IVersion>> GetAllVersions();
-        Task<IEnumerable<string>> GetAllowVersions(GameLoader gameLoader, string? minecraftVersion);
+        Task<string> DownloadGame(string version, GameLoader loader);
+        Task<Process> CreateProcess(IStartupOptions startupOptions, IUser user, bool needDownload, string[] jvmArguments);
+        Task<IFileInfo[]> GetAllFiles();
+        bool GetLauncher(string launcherKey, out object launcher);
+        Task<IEnumerable<IFileInfo>> GetLauncherFiles(string osName, string osArchitecture);
     }
 }

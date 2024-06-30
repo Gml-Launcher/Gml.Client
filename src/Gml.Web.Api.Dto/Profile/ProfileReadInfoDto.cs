@@ -1,5 +1,4 @@
 using System.Collections.Generic;
-using Gml.Web.Api.Domains.System;
 using Gml.Web.Api.Dto.Files;
 
 namespace Gml.Web.Api.Dto.Profile;
@@ -18,5 +17,4 @@ public class ProfileReadInfoDto
     public List<ProfileFileReadDto> Files { get; set; }
     public List<ProfileFileReadDto> WhiteListFiles { get; set; }
     public string Background { get; set; }
-    public OsType OsType { get; set; }
 }

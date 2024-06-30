@@ -21,7 +21,7 @@ namespace GmlCore.Interfaces.Launcher
         string Name { get; set; }
         bool IsEnabled { get; set; }
         string GameVersion { get; set; }
-        string LaunchVersion { get; set; }
+        string? LaunchVersion { get; set; }
         GameLoader Loader { get; }
         string ClientPath { get; set; }
         string IconBase64 { get; set; }
@@ -30,12 +30,13 @@ namespace GmlCore.Interfaces.Launcher
         List<IFileInfo>? FileWhiteList { get; set; }
         List<IProfileServer> Servers { get; set; }
         DateTimeOffset CreateDate { get; set; }
-        string JvmArguments { get; set; }
+        string? JvmArguments { get; set; }
+        ProfileState State { get; set; }
 
         Task<bool> ValidateProfile();
         Task<bool> CheckIsFullLoaded(IStartupOptions startupOptions);
         Task Remove();
-        Task DownloadAsync(OsType startupOptionsOsType, string startupOptionsOsArch);
+        Task DownloadAsync();
         Task<Process> CreateProcess(IStartupOptions startupOptions, IUser user);
         Task<bool> CheckClientExists();
         Task<bool> CheckOsTypeLoaded(IStartupOptions startupOptions);
@@ -43,5 +44,8 @@ namespace GmlCore.Interfaces.Launcher
         Task<IGameProfileInfo?> GetCacheProfile();
         void AddServer(IProfileServer server);
         void RemoveServer(IProfileServer server);
+        Task CreateModsFolder();
+        Task<IEnumerable<IFileInfo>> GetProfileFiles(string osName, string osArchitecture);
+        Task<IFileInfo[]> GetAllProfileFiles();
     }
 }

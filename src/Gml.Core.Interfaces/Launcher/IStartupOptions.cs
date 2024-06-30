@@ -11,7 +11,7 @@ namespace GmlCore.Interfaces.Launcher
         int ScreenHeight { get; set; }
         string? ServerIp { get; set; }
         int ServerPort { get; set; }
-        public OsType OsType { get; set; }
+        public string OsName { get; set; }
         public string OsArch { get; set; }
     }
 }
