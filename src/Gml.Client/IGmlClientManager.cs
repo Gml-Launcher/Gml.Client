@@ -1,5 +1,6 @@
 using System.ComponentModel;
 using System.Diagnostics;
+using System.Runtime.InteropServices;
 using Gml.Client.Models;
 using Gml.Web.Api.Domains.System;
 using Gml.Web.Api.Dto.Messages;
@@ -20,7 +21,7 @@ public interface IGmlClientManager : IDisposable
     Task ClearFiles(ProfileReadInfoDto profile);
     Task LoadDiscordRpc();
     Task UpdateDiscordRpcState(string state);
-    Task<IVersionFile?> GetActualVersion(OsType osType);
+    Task<IVersionFile?> GetActualVersion(OsType osType, Architecture osArch);
     Task UpdateCurrentLauncher((IVersionFile? ActualVersion, bool IsActuallVersion) versionInfo, OsType osType,
         string originalFileName);
 

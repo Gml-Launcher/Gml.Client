@@ -1,6 +1,7 @@
 using System.ComponentModel;
 using System.Diagnostics;
 using System.Reactive.Subjects;
+using System.Runtime.InteropServices;
 using System.Text;
 using DiscordRPC;
 using Gml.Client.Models;
@@ -404,7 +405,7 @@ public class ApiProcedures
         return result?.Data;
     }
 
-    public async Task<IVersionFile?> GetActualVersion(OsType osType)
+    public async Task<IVersionFile?> GetActualVersion(OsType osType, Architecture osArch)
     {
         var response = await _httpClient.GetAsync($"/api/v1/launcher").ConfigureAwait(false);
 
@@ -413,13 +414,43 @@ public class ApiProcedures
 
         var content = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
 
-        var result = JsonConvert.DeserializeObject<ResponseMessage<Dictionary<OsType, LauncherVersion?>?>>(content);
+        var result = JsonConvert.DeserializeObject<ResponseMessage<Dictionary<string, LauncherVersion?>?>>(content);
 
         if (result?.Data is null || result?.Data.Count == 0)
         {
             return null;
         }
 
-        return result!.Data[osType];
+        var osName = GetOsName(osType, osArch);
+
+        return result!.Data.FirstOrDefault(c => c.Key == osName).Value;
+    }
+
+    private string GetOsName(OsType osType, Architecture osArch)
+    {
+        StringBuilder versionBuilder = new StringBuilder();
+
+        switch (osType)
+        {
+            case OsType.Undefined:
+                throw new ArgumentOutOfRangeException(nameof(osType), osType, null);
+                break;
+            case OsType.Linux:
+                versionBuilder.Append("linux");
+                break;
+            case OsType.OsX:
+                versionBuilder.Append("osx");
+                break;
+            case OsType.Windows:
+                versionBuilder.Append("win");
+                break;
+            default:
+                throw new ArgumentOutOfRangeException(nameof(osType), osType, null);
+        }
+
+        versionBuilder.Append('-');
+        versionBuilder.Append(osArch.ToString().ToLower());
+
+        return versionBuilder.ToString();
     }
 }

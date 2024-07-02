@@ -4,6 +4,7 @@ using System.Net.Mime;
 using System.Reactive.Concurrency;
 using System.Reactive.Linq;
 using System.Reactive.Subjects;
+using System.Runtime.InteropServices;
 using Gml.Client.Helpers;
 using Gml.Client.Models;
 using Gml.Web.Api.Domains.System;
@@ -64,7 +65,8 @@ public class GmlClientManager : IGmlClientManager
     public Task UpdateDiscordRpcState(string state)
         => _apiProcedures.UpdateDiscordRpcState(state);
 
-    public Task<IVersionFile?> GetActualVersion(OsType osType) => _apiProcedures.GetActualVersion(osType);
+    public Task<IVersionFile?> GetActualVersion(OsType osType, Architecture osArch)
+        => _apiProcedures.GetActualVersion(osType, osArch);
 
     public async Task UpdateCurrentLauncher(
         (IVersionFile? ActualVersion, bool IsActuallVersion) versionInfo,
