@@ -101,11 +101,11 @@ public class GmlClientManager : IGmlClientManager
                 throw new Exception("Undefined OS type is not supported");
             case OsType.Linux:
             case OsType.OsX:
-                cmd = $"sh -c \"while [ -e /proc/{Process.GetCurrentProcess().Id} ]; do sleep 1; done; mv '{newFileName}' '{originalFileName}'; exec '{originalFileName}'\"";
-                Process.Start("sh", $"-c \"{cmd}\"");
+                cmd = $"sh -c \"while [ -e /proc/{Process.GetCurrentProcess().Id} ]; do sleep 1; done; mv {newFileName} {originalFileName}; exec {originalFileName}\"";
+                Process.Start(cmd);
                 break;
             case OsType.Windows:
-                cmd = $"/C for /L %N in () do (tasklist | findstr {Process.GetCurrentProcess().Id} >NUL || (move /Y \"{newFileName}\" \"{originalFileName}\" & start \"{originalFileName}\" & exit) & timeout 1) >NUL";
+                cmd = $"/C for /L %N in () do (tasklist | findstr {Process.GetCurrentProcess().Id} >NUL || (move /Y {newFileName} {originalFileName} & start {originalFileName} & exit) & timeout 1) >NUL";
                 var psi = new ProcessStartInfo("CMD.exe", cmd)
                 {
                     WindowStyle = ProcessWindowStyle.Hidden,
@@ -120,6 +120,9 @@ public class GmlClientManager : IGmlClientManager
         // Singleton application should end to allow script replace its file
         Environment.Exit(0);
     }
+
+    [DllImport("libc")]
+    private static extern int Kill(int pid, int sig);
 
     public Task<ResponseMessage<ProfileReadInfoDto?>?> GetProfileInfo(ProfileCreateInfoDto profileDto)
         => _apiProcedures.GetProfileInfo(profileDto);
