@@ -121,6 +121,9 @@ public class GmlClientManager : IGmlClientManager
         Environment.Exit(0);
     }
 
+    [DllImport("libc")]
+    private static extern int Kill(int pid, int sig);
+
     public Task<ResponseMessage<ProfileReadInfoDto?>?> GetProfileInfo(ProfileCreateInfoDto profileDto)
         => _apiProcedures.GetProfileInfo(profileDto);
 
