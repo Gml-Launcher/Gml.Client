@@ -118,6 +118,11 @@ public class ApiProcedures
             WorkingDirectory = profilePath
         };
 
+        if (!File.Exists(process.StartInfo.FileName))
+        {
+            throw new FileNotFoundException("Java file not found", process.StartInfo.FileName);
+        }
+
         ChangeProcessRules(process.StartInfo.FileName, osType);
         InitializeFileWatchers(process, profileDto, GetAllowFiles(profileDto), profilePath, installationDirectory);
         return process;
