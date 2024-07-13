@@ -18,10 +18,11 @@ namespace GmlCore.Interfaces.Procedures
         IObservable<double> PackChanged { get; }
         Task AddProfile(IGameProfile? profile);
 
-        Task<IGameProfile?> AddProfile(string name, string version, GameLoader loader, string profileIconBase64,
+        Task<IGameProfile?> AddProfile(string name, string version, string loaderVersion, GameLoader loader,
+            string profileIconBase64,
             string description);
 
-        Task<bool> CanAddProfile(string name, string version);
+        Task<bool> CanAddProfile(string name, string version, string loaderVersion, GameLoader dtoGameLoader);
         Task RemoveProfile(IGameProfile profile);
         Task RemoveProfile(IGameProfile profile, bool removeProfileFiles);
         Task RestoreProfiles();
