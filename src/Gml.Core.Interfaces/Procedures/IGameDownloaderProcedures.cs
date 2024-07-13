@@ -17,7 +17,7 @@ namespace GmlCore.Interfaces.Procedures
         IObservable<string> LoadLog { get;}
         IObservable<Exception> LoadException { get;}
 
-        Task<string> DownloadGame(string version, GameLoader loader);
+        Task<string> DownloadGame(string version, string? launchVersion, GameLoader loader);
         Task<Process> CreateProcess(IStartupOptions startupOptions, IUser user, bool needDownload, string[] jvmArguments);
         Task<IFileInfo[]> GetAllFiles();
         bool GetLauncher(string launcherKey, out object launcher);

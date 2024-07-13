@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Threading.Tasks;
 using Gml.Web.Api.Domains.System;
 using GmlCore.Interfaces.Enums;
 using GmlCore.Interfaces.Storage;
@@ -11,7 +12,10 @@ namespace GmlCore.Interfaces.Launcher
         public string BaseDirectory { get; }
         public string InstallationDirectory { get; }
         public IStorageSettings StorageSettings { get; set; }
-        Dictionary<OsType, IVersionFile?> ActualLauncherVersion { get; set; }
+        Dictionary<string, IVersionFile?> ActualLauncherVersion { get; set; }
+        IGmlSettings Settings { get; }
         void UpdateSettings(StorageType storageType, string storageHost, string storageLogin, string storagePassword);
+        Task<IEnumerable<ILauncherBuild>> GetBuilds();
+        Task<ILauncherBuild?> GetBuild(string name);
     }
 }
