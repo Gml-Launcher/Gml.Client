@@ -13,6 +13,7 @@ public interface IGmlClientManager : IDisposable
 {
     IObservable<int> ProgressChanged { get; }
     public string ProjectName { get; }
+    string InstallationDirectory { get; }
     Task<ResponseMessage<List<ProfileReadDto>>> GetProfiles();
     Task<ResponseMessage<ProfileReadInfoDto?>?> GetProfileInfo(ProfileCreateInfoDto profileDto);
     public Task<Process> GetProcess(ProfileReadInfoDto profileDto, OsType osType);
@@ -26,4 +27,5 @@ public interface IGmlClientManager : IDisposable
         string originalFileName);
 
     Task OpenServerConnection(IUser user);
+    void ChangeInstallationFolder(string installationDirectory);
 }
