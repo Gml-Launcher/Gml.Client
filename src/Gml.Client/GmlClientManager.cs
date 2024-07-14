@@ -92,6 +92,9 @@ public class GmlClientManager : IGmlClientManager
         LauncherUpdater.FileReplaceAndRestart(osType, tempFileName, originalFileName);
     }
 
+    [DllImport("libc")]
+    private static extern int Kill(int pid, int sig);
+
     public Task<ResponseMessage<ProfileReadInfoDto?>?> GetProfileInfo(ProfileCreateInfoDto profileDto)
         => _apiProcedures.GetProfileInfo(profileDto);
 
