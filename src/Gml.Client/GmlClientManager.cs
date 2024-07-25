@@ -18,6 +18,9 @@ namespace Gml.Client;
 public class GmlClientManager : IGmlClientManager
 {
     IObservable<int> IGmlClientManager.ProgressChanged => _progressChanged;
+    public IObservable<bool> ProfilesChanges => _profilesChanged;
+    public IObservable<int> MaxFileCount => _maxFileCount;
+    public IObservable<int> LoadedFilesCount => _loadedFilesCount;
 
     public string ProjectName { get; }
 
@@ -27,8 +30,12 @@ public class GmlClientManager : IGmlClientManager
     private readonly ApiProcedures _apiProcedures;
     private readonly SystemIoProcedures _systemProcedures;
     private ISubject<int> _progressChanged = new Subject<int>();
+    private ISubject<bool> _profilesChanged = new Subject<bool>();
+    private ISubject<int> _maxFileCount = new Subject<int>();
+    private ISubject<int> _loadedFilesCount = new Subject<int>();
     private SignalRConnect? _launchbackendConnection;
     private readonly string _webSocketAddress;
+    private IDisposable? _profilesChangedEvent;
 
     public GmlClientManager(string installationDirectory, string gateWay, string projectName, OsType osType)
     {
@@ -43,6 +50,8 @@ public class GmlClientManager : IGmlClientManager
         }, osType);
 
         _apiProcedures.ProgressChanged.Subscribe(_progressChanged);
+        _apiProcedures.LoadedFilesCount.Subscribe(_loadedFilesCount);
+        _apiProcedures.MaxFileCount.Subscribe(_maxFileCount);
 
         ProjectName = projectName;
 
@@ -131,6 +140,7 @@ public class GmlClientManager : IGmlClientManager
     public async Task OpenServerConnection(IUser user)
     {
         _launchbackendConnection = new SignalRConnect($"{_webSocketAddress}/ws/launcher", user);
+        _profilesChangedEvent ??= _launchbackendConnection.ProfilesChanges.Subscribe(_profilesChanged);
         await _launchbackendConnection.BuildAndConnect();
     }
 
@@ -148,5 +158,6 @@ public class GmlClientManager : IGmlClientManager
     void IDisposable.Dispose()
     {
         _launchbackendConnection?.Dispose();
+        _profilesChangedEvent?.Dispose();
     }
 }

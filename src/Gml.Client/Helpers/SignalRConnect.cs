@@ -1,3 +1,4 @@
+using System.Reactive.Subjects;
 using Gml.Client.Models;
 using Microsoft.AspNetCore.SignalR.Client;
 
@@ -5,9 +6,11 @@ namespace Gml.Client.Helpers;
 
 public class SignalRConnect : IDisposable, IAsyncDisposable
 {
+    private readonly ISubject<bool> _profilesChanged = new Subject<bool>();
     private readonly string _address;
     private readonly IUser _user;
     private HubConnection _hubConnection;
+    public IObservable<bool> ProfilesChanges => _profilesChanged;
 
     public SignalRConnect(string address, IUser user)
     {
@@ -51,6 +54,12 @@ public class SignalRConnect : IDisposable, IAsyncDisposable
         _hubConnection.On("RequestLauncherHash", async () =>
         {
             await _hubConnection.SendAsync("ConfirmLauncherHash", "hash");
+        });
+
+        _hubConnection.On("RefreshProfiles", () =>
+        {
+            _profilesChanged.OnNext(true);
+            return Task.CompletedTask;
         });
 
     }
