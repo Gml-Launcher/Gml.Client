@@ -18,6 +18,9 @@ namespace Gml.Client;
 public class GmlClientManager : IGmlClientManager
 {
     IObservable<int> IGmlClientManager.ProgressChanged => _progressChanged;
+    public IObservable<bool> ProfilesChanges => _profilesChanged;
+    public IObservable<int> MaxFileCount => _maxFileCount;
+    public IObservable<int> LoadedFilesCount => _loadedFilesCount;
 
     public string ProjectName { get; }
     public string InstallationDirectory => _installationDirectory;
@@ -28,9 +31,13 @@ public class GmlClientManager : IGmlClientManager
     private readonly ApiProcedures _apiProcedures;
     private SystemIoProcedures _systemProcedures;
     private ISubject<int> _progressChanged = new Subject<int>();
+    private ISubject<bool> _profilesChanged = new Subject<bool>();
+    private ISubject<int> _maxFileCount = new Subject<int>();
+    private ISubject<int> _loadedFilesCount = new Subject<int>();
     private SignalRConnect? _launchbackendConnection;
     private readonly string _webSocketAddress;
     private readonly OsType _osType;
+    private IDisposable? _profilesChangedEvent;
 
     public GmlClientManager(string installationDirectory, string gateWay, string projectName, OsType osType)
     {
@@ -46,6 +53,8 @@ public class GmlClientManager : IGmlClientManager
         }, osType);
 
         _apiProcedures.ProgressChanged.Subscribe(_progressChanged);
+        _apiProcedures.LoadedFilesCount.Subscribe(_loadedFilesCount);
+        _apiProcedures.MaxFileCount.Subscribe(_maxFileCount);
 
         ProjectName = projectName;
 
@@ -92,36 +101,7 @@ public class GmlClientManager : IGmlClientManager
 
         _progressChanged.OnNext(100);
 
-        FileReplaceAndRestart(osType, tempFileName, originalFileName);
-    }
-
-    private void FileReplaceAndRestart(OsType osType, string newFileName, string originalFileName)
-    {
-        string cmd;
-        switch (osType)
-        {
-            case OsType.Undefined:
-                throw new Exception("Undefined OS type is not supported");
-            case OsType.Linux:
-            case OsType.OsX:
-                cmd = $"sh -c \"while [ -e /proc/{Process.GetCurrentProcess().Id} ]; do sleep 1; done; mv {newFileName} {originalFileName}; exec {originalFileName}\"";
-                Process.Start(cmd);
-                break;
-            case OsType.Windows:
-                cmd = $"/C for /L %N in () do (tasklist | findstr {Process.GetCurrentProcess().Id} >NUL || (move /Y {newFileName} {originalFileName} & start {originalFileName} & exit) & timeout 1) >NUL";
-                var psi = new ProcessStartInfo("CMD.exe", cmd)
-                {
-                    WindowStyle = ProcessWindowStyle.Hidden,
-                    CreateNoWindow = true,
-                };
-                Process.Start(psi);
-                break;
-            default:
-                throw new ArgumentOutOfRangeException(nameof(osType), osType, null);
-        }
-
-        // Singleton application should end to allow script replace its file
-        Environment.Exit(0);
+        LauncherUpdater.FileReplaceAndRestart(osType, tempFileName, originalFileName);
     }
 
     [DllImport("libc")]
@@ -163,6 +143,7 @@ public class GmlClientManager : IGmlClientManager
     public async Task OpenServerConnection(IUser user)
     {
         _launchbackendConnection = new SignalRConnect($"{_webSocketAddress}/ws/launcher", user);
+        _profilesChangedEvent ??= _launchbackendConnection.ProfilesChanges.Subscribe(_profilesChanged);
         await _launchbackendConnection.BuildAndConnect();
     }
 
@@ -186,5 +167,6 @@ public class GmlClientManager : IGmlClientManager
     void IDisposable.Dispose()
     {
         _launchbackendConnection?.Dispose();
+        _profilesChangedEvent?.Dispose();
     }
 }
