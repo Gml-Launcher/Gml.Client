@@ -30,11 +30,15 @@ public class ApiProcedures
     private int _progress;
 
     private ISubject<int> _progressChanged = new Subject<int>();
+    private ISubject<int> _maxFileCount = new Subject<int>();
+    private ISubject<int> _loadedFilesCount = new Subject<int>();
     internal event EventHandler<string>? FileAdded;
 
     private Dictionary<string, List<ProfileFileWatcher>> _fileWatchers = new();
     private (DiscordRpcClient? Client, DiscordRpcReadDto? ClientInfo)? _discordRpcClient;
     public IObservable<int> ProgressChanged => _progressChanged;
+    public IObservable<int> MaxFileCount => _maxFileCount;
+    public IObservable<int> LoadedFilesCount => _loadedFilesCount;
     public ApiProcedures(HttpClient httpClient, OsType osType)
     {
         _httpClient = httpClient;
@@ -254,6 +258,8 @@ public class ApiProcedures
 
         var throttler = new SemaphoreSlim(loadFilesPartCount);
 
+        _maxFileCount.OnNext(_progressFilesCount);
+
         var tasks = files.Select(file =>
             DownloadFileWithRetry(installationDirectory, file, throttler, cancellationToken));
 
@@ -325,6 +331,7 @@ public class ApiProcedures
             _finishedFilesCount++;
             _progress = Convert.ToInt16(_finishedFilesCount * 100 / _progressFilesCount);
             _progressChanged.OnNext(_progress);
+            _loadedFilesCount.OnNext(_finishedFilesCount);
             Debug.WriteLine($"{_finishedFilesCount}/{_progressFilesCount}");
         }
         catch (Exception ex)

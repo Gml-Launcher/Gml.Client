@@ -12,7 +12,10 @@ namespace Gml.Client;
 public interface IGmlClientManager : IDisposable
 {
     IObservable<int> ProgressChanged { get; }
+    IObservable<bool> ProfilesChanges { get; }
     public string ProjectName { get; }
+    IObservable<int> MaxFileCount { get; }
+    IObservable<int> LoadedFilesCount { get; }
     Task<ResponseMessage<List<ProfileReadDto>>> GetProfiles();
     Task<ResponseMessage<ProfileReadInfoDto?>?> GetProfileInfo(ProfileCreateInfoDto profileDto);
     public Task<Process> GetProcess(ProfileReadInfoDto profileDto, OsType osType);
