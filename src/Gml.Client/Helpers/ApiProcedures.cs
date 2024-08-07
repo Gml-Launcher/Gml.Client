@@ -278,7 +278,11 @@ public class ApiProcedures
                 await DownloadFile(installationDirectory, file, throttler, cancellationToken);
                 return;
             }
-            catch
+            catch(IOException ex)
+            {
+                throw;
+            }
+            catch(Exception ex)
             {
                 if (attempt == 3)
                     throw;
@@ -334,13 +338,16 @@ public class ApiProcedures
             _loadedFilesCount.OnNext(_finishedFilesCount);
             Debug.WriteLine($"{_finishedFilesCount}/{_progressFilesCount}");
         }
+        catch (IOException ex) {
+            throw;
+        }
         catch (Exception ex)
         {
             Console.WriteLine(ex);
         }
         finally
         {
-            throttler.Release(); // Возвращаем пройденное разрешение обратно в SemaphoreSlim.
+            throttler.Release();
         }
     }
 
