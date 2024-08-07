@@ -119,8 +119,13 @@ public class ApiProcedures
         {
             FileName = profileDto.JavaPath.Replace("{localPath}", installationDirectory),
             Arguments = profileDto.Arguments,
-            WorkingDirectory = profilePath
+            WorkingDirectory = profilePath,
+            RedirectStandardOutput = true,
+            RedirectStandardError = true,
+            UseShellExecute = false,
+            CreateNoWindow = true
         };
+
 
         if (!File.Exists(process.StartInfo.FileName))
         {
