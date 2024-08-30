@@ -15,4 +15,5 @@ public interface INotificationProcedures
     Task SendMessage(string message, NotificationType type);
     Task SendMessage(string message, Exception exception);
     Task Retore();
+    Task Clear();
 }

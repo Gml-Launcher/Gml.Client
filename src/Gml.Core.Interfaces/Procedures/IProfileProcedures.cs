@@ -4,6 +4,7 @@ using System.ComponentModel;
 using System.IO;
 using System.Threading.Tasks;
 using Gml.Web.Api.Domains.System;
+using GmlCore.Interfaces.Bootstrap;
 using GmlCore.Interfaces.Enums;
 using GmlCore.Interfaces.Launcher;
 using GmlCore.Interfaces.System;
@@ -16,6 +17,7 @@ namespace GmlCore.Interfaces.Procedures
         public delegate void ProgressPackChanged(ProgressChangedEventArgs e);
 
         IObservable<double> PackChanged { get; }
+        IObservable<int> ProfilesChanged { get; }
         Task AddProfile(IGameProfile? profile);
 
         Task<IGameProfile?> AddProfile(string name, string version, string loaderVersion, GameLoader loader,
@@ -31,7 +33,7 @@ namespace GmlCore.Interfaces.Procedures
         Task<bool> ValidateProfileAsync(IGameProfile baseProfile);
         bool ValidateProfile();
         Task SaveProfiles();
-        Task DownloadProfileAsync(IGameProfile baseProfile);
+        Task DownloadProfileAsync(IGameProfile baseProfile, IBootstrapProgram? version = default);
         Task<IEnumerable<IFileInfo>> GetProfileFiles(IGameProfile baseProfile);
         Task<IGameProfile?> GetProfile(string profileName);
         Task<IEnumerable<IGameProfile>> GetProfiles();
@@ -42,13 +44,18 @@ namespace GmlCore.Interfaces.Procedures
         Task RemoveFileFromWhiteList(IGameProfile profile, IFileInfo file);
         Task UpdateProfile(IGameProfile profile, string newProfileName, Stream? icon, Stream? backgroundImage,
             string updateDtoDescription, bool isEnabled,
-            string jvmArguments);
+            string jvmArguments, string gameArguments);
         Task<string[]> InstallAuthLib(IGameProfile profile);
         Task<IGameProfileInfo?> GetCacheProfile(IGameProfile baseProfile);
         Task SetCacheProfile(IGameProfileInfo profile);
         Task CreateModsFolder(IGameProfile profile);
         Task<IEnumerable<IFileInfo>> GetProfileFiles(IGameProfile profile, string osName, string osArchitecture);
-        Task<IFileInfo[]> GetAllProfileFiles(IGameProfile baseProfile);
+        Task<IFileInfo[]> GetAllProfileFiles(IGameProfile baseProfile, bool needRestoreCache);
         Task<IEnumerable<string>> GetAllowVersions(GameLoader result, string? minecraftVersion);
+        Task ChangeBootstrapProgram(IGameProfile testGameProfile, IBootstrapProgram version);
+        Task AddFolderToWhiteList(IGameProfile profile, IFolderInfo folder);
+        Task RemoveFolderFromWhiteList(IGameProfile profile, IFolderInfo folder);
+        Task RemoveFolderFromWhiteList(IGameProfile profile, IEnumerable<IFolderInfo> folders);
+        Task AddFolderToWhiteList(IGameProfile profile, IEnumerable<IFolderInfo> folders);
     }
 }

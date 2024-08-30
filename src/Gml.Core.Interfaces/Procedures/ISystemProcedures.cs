@@ -1,5 +1,7 @@
+using System.Collections;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using GmlCore.Interfaces.Bootstrap;
 using GmlCore.Interfaces.Launcher;
 
 namespace GmlCore.Interfaces.Procedures
@@ -17,5 +19,6 @@ namespace GmlCore.Interfaces.Procedures
         Task DownloadFileAsync(string url, string destinationFilePath);
         void ExtractZipFile(string zipFilePath, string extractPath);
         void SetFileExecutable(string filePath);
+        Task<IEnumerable<IBootstrapProgram>> GetJavaVersions();
     }
 }
