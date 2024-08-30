@@ -9,4 +9,5 @@ public enum AuthType
     EasyCabinet = 4,
     UnicoreCMS = 5,
     CustomEndpoint = 6,
+    NamelessMC = 7,
 }

@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using Gml.Web.Api.Dto.Files;
 using GmlCore.Interfaces.Enums;
+using GmlCore.Interfaces.System;
 
 namespace Gml.Web.Api.Dto.Profile;
 
@@ -15,9 +16,11 @@ public class ProfileReadInfoDto
     public string Description { get; set; }
     public string Arguments { get; set; }
     public string JvmArguments { get; set; }
+    public string GameArguments { get; set; }
     public bool HasUpdate { get; set; }
     public ProfileState State { get; set; }
     public List<ProfileFileReadDto> Files { get; set; }
+    public List<ProfileFolderReadDto> WhiteListFolders { get; set; }
     public List<ProfileFileReadDto> WhiteListFiles { get; set; }
     public string Background { get; set; }
 }
