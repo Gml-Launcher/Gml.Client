@@ -16,6 +16,7 @@ public interface IGmlClientManager : IDisposable
     public string ProjectName { get; }
     IObservable<int> MaxFileCount { get; }
     IObservable<int> LoadedFilesCount { get; }
+    string InstallationDirectory { get; }
     Task<ResponseMessage<List<ProfileReadDto>>> GetProfiles();
     Task<ResponseMessage<ProfileReadInfoDto?>?> GetProfileInfo(ProfileCreateInfoDto profileDto);
     public Task<Process> GetProcess(ProfileReadInfoDto profileDto, OsType osType);
@@ -27,8 +28,6 @@ public interface IGmlClientManager : IDisposable
     Task<IVersionFile?> GetActualVersion(OsType osType, Architecture osArch);
     Task UpdateCurrentLauncher((IVersionFile? ActualVersion, bool IsActuallVersion) versionInfo, OsType osType,
         string originalFileName);
-
     Task OpenServerConnection(IUser user);
-    string InstallationDirectory { get; }
     void ChangeInstallationFolder(string installationDirectory);
 }
