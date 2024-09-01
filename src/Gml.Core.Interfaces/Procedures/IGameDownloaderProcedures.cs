@@ -3,6 +3,7 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Threading.Tasks;
+using GmlCore.Interfaces.Bootstrap;
 using GmlCore.Interfaces.Enums;
 using GmlCore.Interfaces.Launcher;
 using GmlCore.Interfaces.System;
@@ -17,9 +18,11 @@ namespace GmlCore.Interfaces.Procedures
         IObservable<string> LoadLog { get;}
         IObservable<Exception> LoadException { get;}
 
-        Task<string> DownloadGame(string version, string? launchVersion, GameLoader loader);
-        Task<Process> CreateProcess(IStartupOptions startupOptions, IUser user, bool needDownload, string[] jvmArguments);
-        Task<IFileInfo[]> GetAllFiles();
+        Task<string> DownloadGame(string version, string? launchVersion, GameLoader loader,
+            IBootstrapProgram? bootstrapProgram);
+        Task<Process> CreateProcess(IStartupOptions startupOptions, IUser user, bool needDownload,
+            string[] jvmArguments, string[] gameArguments);
+        Task<IFileInfo[]> GetAllFiles(bool needRestoreCache);
         bool GetLauncher(string launcherKey, out object launcher);
         Task<IEnumerable<IFileInfo>> GetLauncherFiles(string osName, string osArchitecture);
     }
