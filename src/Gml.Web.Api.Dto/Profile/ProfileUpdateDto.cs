@@ -9,4 +9,5 @@ public class ProfileUpdateDto
     public string IconBase64 { get; set; } = null!;
     public string BackgroundImageKey { get; set; }
     public string JvmArguments { get; set; }
+    public string GameArguments { get; set; }
 }

@@ -7,6 +7,7 @@ namespace GmlCore.Interfaces
     public interface IGmlManager
     {
         public ILauncherInfo LauncherInfo { get; }
+        public IBugTrackerProcedures BugTracker { get; }
         public IProfileProcedures Profiles { get; }
         public IFileStorageProcedures Files { get; }
         public IServicesIntegrationProcedures Integrations { get; }

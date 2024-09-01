@@ -10,7 +10,7 @@ namespace GmlCore.Interfaces.Procedures;
 public interface ILauncherProcedures
 {
     Task<string> CreateVersion(IVersionFile version, ILauncherBuild launcherBuild);
-    Task Build(string version, string[] versions);
+    Task Build(string version, string[] osNameVersions);
     IObservable<string> BuildLogs { get; }
     bool CanCompile(string version, out string message);
     Task<IEnumerable<string>> GetPlatforms();

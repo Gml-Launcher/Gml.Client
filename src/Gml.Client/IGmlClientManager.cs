@@ -28,7 +28,6 @@ public interface IGmlClientManager : IDisposable
     Task<IVersionFile?> GetActualVersion(OsType osType, Architecture osArch);
     Task UpdateCurrentLauncher((IVersionFile? ActualVersion, bool IsActuallVersion) versionInfo, OsType osType,
         string originalFileName);
-
     Task OpenServerConnection(IUser user);
     void ChangeInstallationFolder(string installationDirectory);
 }
