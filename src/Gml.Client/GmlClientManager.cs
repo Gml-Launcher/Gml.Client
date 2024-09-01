@@ -23,18 +23,20 @@ public class GmlClientManager : IGmlClientManager
     public IObservable<int> LoadedFilesCount => _loadedFilesCount;
 
     public string ProjectName { get; }
+    public string InstallationDirectory => _installationDirectory;
 
     public event EventHandler<ProgressChangedEventArgs>? ProgressChanged;
 
-    private readonly string _installationDirectory;
+    private string _installationDirectory;
     private readonly ApiProcedures _apiProcedures;
-    private readonly SystemIoProcedures _systemProcedures;
+    private SystemIoProcedures _systemProcedures;
     private ISubject<int> _progressChanged = new Subject<int>();
     private ISubject<bool> _profilesChanged = new Subject<bool>();
     private ISubject<int> _maxFileCount = new Subject<int>();
     private ISubject<int> _loadedFilesCount = new Subject<int>();
     private SignalRConnect? _launchbackendConnection;
     private readonly string _webSocketAddress;
+    private readonly OsType _osType;
     private IDisposable? _profilesChangedEvent;
 
     public GmlClientManager(string installationDirectory, string gateWay, string projectName, OsType osType)
@@ -43,6 +45,7 @@ public class GmlClientManager : IGmlClientManager
 
         var hostUri = new Uri(gateWay);
 
+        _osType = osType;
         _systemProcedures = new SystemIoProcedures(installationDirectory, osType);
         _apiProcedures = new ApiProcedures(new HttpClient
         {
@@ -142,6 +145,12 @@ public class GmlClientManager : IGmlClientManager
         _launchbackendConnection = new SignalRConnect($"{_webSocketAddress}/ws/launcher", user);
         _profilesChangedEvent ??= _launchbackendConnection.ProfilesChanges.Subscribe(_profilesChanged);
         await _launchbackendConnection.BuildAndConnect();
+    }
+
+    public void ChangeInstallationFolder(string installationDirectory)
+    {
+        _installationDirectory = installationDirectory;
+        _systemProcedures = new SystemIoProcedures(installationDirectory, _osType);
     }
 
     private async void UpdateInfo(long _)

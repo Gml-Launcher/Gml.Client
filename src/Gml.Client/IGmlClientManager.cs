@@ -29,4 +29,6 @@ public interface IGmlClientManager : IDisposable
         string originalFileName);
 
     Task OpenServerConnection(IUser user);
+    string InstallationDirectory { get; }
+    void ChangeInstallationFolder(string installationDirectory);
 }
