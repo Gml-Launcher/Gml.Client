@@ -64,14 +64,17 @@ public class SystemIoProcedures
         {
             List<string> allowedPaths =
             [
-                Path.Combine(_installationDirectory, "clients", profileInfo.ProfileName, "saves"),
-                Path.Combine(_installationDirectory, "clients", profileInfo.ProfileName, "logs"),
-                Path.Combine(_installationDirectory, "clients", profileInfo.ProfileName, "crash-reports")
+                Path.GetFullPath(Path.Combine(_installationDirectory, "clients", profileInfo.ProfileName, "saves")),
+                Path.GetFullPath(Path.Combine(_installationDirectory, "clients", profileInfo.ProfileName, "logs")),
+                Path.GetFullPath(Path.Combine(_installationDirectory, "clients", profileInfo.ProfileName, "crash-reports"))
             ];
 
-            allowedPaths.AddRange(profileInfo.WhiteListFolders.Select(path => Path.Combine(_installationDirectory, "clients", profileInfo.ProfileName, Path.Combine(path.Path.Split(Path.DirectorySeparatorChar, StringSplitOptions.RemoveEmptyEntries)))));
+            allowedPaths.AddRange(profileInfo.WhiteListFolders.Select(path =>
+                Path.GetFullPath(Path.Combine(_installationDirectory, "clients", profileInfo.ProfileName,
+                    Path.Combine(path.Path.Split(Path.DirectorySeparatorChar, StringSplitOptions.RemoveEmptyEntries)))))
+                );
 
-            var profilePath = Path.Combine(_installationDirectory, "clients", profileInfo.ProfileName);
+            var profilePath = Path.GetFullPath(Path.Combine(_installationDirectory, "clients", profileInfo.ProfileName));
 
             var directoryInfo = new DirectoryInfo(profilePath);
 
@@ -83,9 +86,9 @@ public class SystemIoProcedures
             var files = directoryInfo.GetFiles("*.*", SearchOption.AllDirectories);
 
             var hashSet = profileInfo.Files
-                .Select(f => new FileInfo(GetRealFilePath(_installationDirectory, f)).FullName)
+                .Select(f => Path.GetFullPath(GetRealFilePath(_installationDirectory, f)))
                 .Concat(profileInfo.WhiteListFiles
-                    .Select(wf => new FileInfo(GetRealFilePath(_installationDirectory, wf)).FullName));
+                    .Select(wf => Path.GetFullPath(GetRealFilePath(_installationDirectory, wf))));
 
             var exclusionSet = new HashSet<string>(hashSet);
 
