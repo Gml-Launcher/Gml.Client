@@ -69,7 +69,7 @@ public class SystemIoProcedures
                 Path.Combine(_installationDirectory, "clients", profileInfo.ProfileName, "crash-reports")
             ];
 
-            allowedPaths.AddRange(profileInfo.WhiteListFolders.Select(path => Path.Combine(_installationDirectory, "clients", profileInfo.ProfileName, Path.Combine(path.Path.Split('/', StringSplitOptions.RemoveEmptyEntries)))));
+            allowedPaths.AddRange(profileInfo.WhiteListFolders.Select(path => Path.Combine(_installationDirectory, "clients", profileInfo.ProfileName, Path.Combine(path.Path.Split(Path.DirectorySeparatorChar, StringSplitOptions.RemoveEmptyEntries)))));
 
             var profilePath = Path.Combine(_installationDirectory, "clients", profileInfo.ProfileName);
 
