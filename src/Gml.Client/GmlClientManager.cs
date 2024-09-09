@@ -140,6 +140,23 @@ public class GmlClientManager : IGmlClientManager
         return user;
     }
 
+    public async Task<(IUser User, string Message, IEnumerable<string> Details)> Auth(string accessToken)
+    {
+        var user = await _apiProcedures.Auth(accessToken);
+
+        if (user.User?.IsAuth == true)
+        {
+            if (_launchbackendConnection?.DisposeAsync().AsTask() is {} task)
+            {
+                await task;
+            }
+
+            await OpenServerConnection(user.User);
+        }
+
+        return user;
+    }
+
     public async Task OpenServerConnection(IUser user)
     {
         _launchbackendConnection = new SignalRConnect($"{_webSocketAddress}/ws/launcher", user);

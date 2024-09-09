@@ -254,6 +254,39 @@ public class ApiProcedures
         return (authUser, dto?.Message ?? string.Empty, dto?.Errors ?? []);
     }
 
+    public async Task<(IUser User, string Message, IEnumerable<string> Details)> Auth(string accessToken)
+    {
+        var model = JsonConvert.SerializeObject(new BaseUserPassword
+        {
+            AccessToken = accessToken,
+        });
+
+        var authUser = new AuthUser();
+
+        var data = new StringContent(model, Encoding.UTF8, "application/json");
+        var response = await _httpClient.PostAsync("/api/v1/integrations/auth/checkToken", data).ConfigureAwait(false);
+        _httpClient.DefaultRequestHeaders.Remove("X-HWID");
+        authUser.IsAuth = response.IsSuccessStatusCode;
+
+        var content = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
+
+        var dto = JsonConvert.DeserializeObject<ResponseMessage<PlayerReadDto>>(content);
+
+        if (response.IsSuccessStatusCode && dto != null)
+        {
+            authUser.Uuid = dto.Data!.Uuid;
+            authUser.Name = dto.Data.Name;
+            authUser.AccessToken = dto.Data!.AccessToken;
+            authUser.Has2Fa = false; //dto.Data!.Has2Fa;
+            authUser.ExpiredDate = dto.Data!.ExpiredDate;
+            authUser.TextureUrl = dto.Data.TextureSkinUrl;
+
+            return (authUser, string.Empty, Enumerable.Empty<string>());
+        }
+
+        return (authUser, dto?.Message ?? string.Empty, dto?.Errors ?? []);
+    }
+
     public async Task DownloadFiles(string installationDirectory, ProfileFileReadDto[] files, int loadFilesPartCount,
         CancellationToken cancellationToken = default)
     {
