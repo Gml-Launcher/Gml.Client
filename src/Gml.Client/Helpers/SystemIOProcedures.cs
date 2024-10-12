@@ -10,6 +10,7 @@ public class SystemIoProcedures
 {
     private readonly string _installationDirectory;
     private readonly OsType _osType;
+    private const long _oneHundredMB = 100 * 1024 * 1024;
 
     public SystemIoProcedures(string installationDirectory, OsType osType)
     {
@@ -37,6 +38,11 @@ public class SystemIoProcedures
 
             if (FileExists(localPath))
             {
+                if (new FileInfo(localPath).Length >= _oneHundredMB)
+                {
+                    return;
+                }
+
                 var hashIsCorrect = SystemHelper.CalculateFileHash(localPath, new SHA256Managed()) == downloadingFile.Hash;
                 if (hashIsCorrect)
                 {
@@ -44,7 +50,7 @@ public class SystemIoProcedures
                 }
             }
 
-            if (!FileExists(localPath) || !whiteListFiles.Any(c => c.Hash.Equals(downloadingFile.Hash)))
+            if (!whiteListFiles.Any(c => c.Hash.Equals(downloadingFile.Hash)))
             {
                 errorFiles.Add(downloadingFile);
             }
