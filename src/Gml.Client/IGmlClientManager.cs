@@ -22,6 +22,7 @@ public interface IGmlClientManager : IDisposable
     public Task<Process> GetProcess(ProfileReadInfoDto profileDto, OsType osType);
     Task DownloadNotInstalledFiles(ProfileReadInfoDto profileInfo, CancellationToken cancellationToken);
     Task<(IUser User, string Message, IEnumerable<string> Details)> Auth(string login, string password, string hwid);
+    Task<(IUser User, string Message, IEnumerable<string> Details)> Auth(string accessToken);
     Task ClearFiles(ProfileReadInfoDto profile);
     Task LoadDiscordRpc();
     Task UpdateDiscordRpcState(string state);

@@ -52,9 +52,16 @@ public class ProfileFileWatcher
 
         FileAdded?.Invoke(this, e.FullPath);
 
-        if (_needKill)
+        if (_needKill && !_process.HasExited)
         {
-            _process.Kill();
+            try
+            {
+                _process.Kill();
+            }
+            catch (InvalidOperationException ex)
+            {
+                // Ignore
+            }
         }
     }
 }
