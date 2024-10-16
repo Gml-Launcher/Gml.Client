@@ -52,7 +52,7 @@ public class ProfileFileWatcher
 
         FileAdded?.Invoke(this, e.FullPath);
 
-        if (_needKill && !_process.HasExited)
+        if (_needKill)
         {
             try
             {
