@@ -1,5 +1,6 @@
 using System.ComponentModel;
 using System.Diagnostics;
+using System.Net;
 using System.Reactive.Subjects;
 using System.Runtime.InteropServices;
 using System.Text;
@@ -71,7 +72,19 @@ public class ApiProcedures
 
         var data = new StringContent(model, Encoding.UTF8, "application/json");
 
-        var response = await _httpClient.PostAsync("/api/v1/profiles/info", data).ConfigureAwait(false);
+        var clientMessage = new HttpRequestMessage
+        {
+            Content = data,
+            RequestUri = new Uri(string.Concat(_httpClient.BaseAddress, "api/v1/profiles/info")),
+            Method = HttpMethod.Post
+        };
+
+        clientMessage.Headers.Add("Authorization", profileCreateInfoDto.UserAccessToken);
+
+        var response = await _httpClient.SendAsync(clientMessage).ConfigureAwait(false);
+
+        if (response.StatusCode is HttpStatusCode.Unauthorized or HttpStatusCode.Forbidden)
+            throw new UnauthorizedAccessException();
 
         if (!response.IsSuccessStatusCode)
             return null;
