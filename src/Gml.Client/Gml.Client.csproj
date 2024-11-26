@@ -1,0 +1,33 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netstandard2.1</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <LangVersion>latest</LangVersion>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Update="GmlClientManager.cs">
+      <DependentUpon>IGmlClientManager.cs</DependentUpon>
+    </Compile>
+    <Compile Update="Models\AuthUser.cs">
+      <DependentUpon>IUser.cs</DependentUpon>
+    </Compile>
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Avalonia" Version="11.1.4"/>
+    <PackageReference Include="DiscordRichPresence" Version="1.2.1.24"/>
+    <PackageReference Include="Microsoft.AspNetCore.SignalR.Client" Version="8.0.10"/>
+    <PackageReference Include="Newtonsoft.Json" Version="13.0.3"/>
+    <PackageReference Include="System.Reactive" Version="6.0.1"/>
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Gml.Core.Interfaces\Gml.Core.Interfaces.csproj"/>
+    <ProjectReference Include="..\Gml.Web.Api.Domains\Gml.Web.Api.Domains.csproj"/>
+    <ProjectReference Include="..\Gml.Web.Api.Dto\Gml.Web.Api.Dto.csproj"/>
+  </ItemGroup>
+
+</Project>
