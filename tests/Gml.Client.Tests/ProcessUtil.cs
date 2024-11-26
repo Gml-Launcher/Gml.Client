@@ -5,13 +5,15 @@ namespace Gml.Client.Tests;
 
 public class ProcessUtil
 {
+    public ProcessUtil(Process process)
+    {
+        Process = process;
+    }
+
+    public Process Process { get; }
     public event EventHandler<string>? OutputReceived;
 
     public event EventHandler? Exited;
-
-    public Process Process { get; private set; }
-
-    public ProcessUtil(Process process) => Process = process;
 
     public void StartWithEvents()
     {
@@ -23,14 +25,14 @@ public class ProcessUtil
         Process.StartInfo.StandardOutputEncoding = Encoding.UTF8;
         Process.StartInfo.StandardErrorEncoding = Encoding.UTF8;
         Process.EnableRaisingEvents = true;
-        Process.ErrorDataReceived += (DataReceivedEventHandler) ((s, e) =>
+        Process.ErrorDataReceived += (DataReceivedEventHandler)((s, e) =>
         {
             if (OutputReceived == null)
                 return;
             OutputReceived(this, e.Data ?? "");
         });
 
-        Process.OutputDataReceived += (DataReceivedEventHandler) ((s, e) =>
+        Process.OutputDataReceived += (DataReceivedEventHandler)((s, e) =>
         {
             if (OutputReceived == null)
                 return;
@@ -49,5 +51,8 @@ public class ProcessUtil
         Process.BeginOutputReadLine();
     }
 
-    public Task WaitForExitTaskAsync() => Task.Run((Action) (() => this.Process.WaitForExit()));
+    public Task WaitForExitTaskAsync()
+    {
+        return Task.Run((Action)(() => Process.WaitForExit()));
+    }
 }

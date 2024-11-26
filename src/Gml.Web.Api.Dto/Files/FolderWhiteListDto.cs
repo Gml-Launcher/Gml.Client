@@ -1,6 +1,4 @@
-﻿using GmlCore.Interfaces.System;
-
-namespace Gml.Web.Api.Dto.Files;
+﻿namespace Gml.Web.Api.Dto.Files;
 
 public class FolderWhiteListDto
 {

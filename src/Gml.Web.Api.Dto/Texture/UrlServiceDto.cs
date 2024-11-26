@@ -5,7 +5,7 @@ public class UrlServiceDto
     public UrlServiceDto()
     {
     }
-    
+
     public UrlServiceDto(string url)
     {
         Url = url;
