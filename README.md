@@ -1,72 +1,86 @@
+# Cloning and Setting Up the Gml.Client Project
 
-![Frame 1](https://github.com/GamerVII-NET/minecraft-launcher/assets/111225722/e0a5035b-6898-4579-b8b5-0fcf1cd93ca6)
+This guide will help you clone the `Gml.Client` project from GitHub, set up the development environment, and publish the
+project.
 
-GamerVII Launcher
-=======
-The Minecraft Launcher is a user-friendly application designed to streamline the process of launching Minecraft and managing game settings. It provides an intuitive interface and essential features to enhance the Minecraft gaming experience.
+## Prerequisites
 
-## Installation
+Before you begin, ensure that you have the following software installed on your machine:
 
-### Prerequisites
+- [Git](https://git-scm.com/)
+- .NET SDK (version 8.0)
+- [JetBrains Rider](https://www.jetbrains.com/rider/)
 
-Before installing the GamerVII Launcher, ensure you have the following prerequisites:
+## Cloning the Repository
 
-- **.NET 8.0 SDK:** You need to have .NET 8.0 SDK installed on your system. You can download it
-  from [Microsoft's official website](https://dotnet.microsoft.com/download/dotnet/8.0) or use a package manager
-  suitable for your operating system.
+1. Open a terminal.
+2. Run the following command to clone the repository:
 
-- **Git:** Ensure Git is installed on your system. You can download it from
-  the [Git website](https://git-scm.com/downloads) or use a package manager.
+    ```sh
+    git clone https://github.com/Gml-Launcher/Gml.Client.git
+    ```
 
-### Steps to Install GamerVII Launcher
+3. Navigate to the project directory:
 
-1. **Clone the Repository:**
-   Open a terminal and clone the repository using Git with the `--recursive` option:
-   ```bash
-   git clone --recursive https://github.com/GamerVII-NET/minecraft-launcher.git
-   cd minecraft-launcher
-   ```
+    ```sh
+    cd Gml.Client
+    ```
 
-2. **Build the Project:**
-   Restore the dependencies and build the project using the .NET CLI:
-   ```bash
-   dotnet restore
-   dotnet build
-   ```
+## Setting Up the Development Environment
 
-3. **Run the Launcher:**
-   Once the project is built, you can run the launcher using the following command:
-   ```bash
-   dotnet run --project path/to/your/project
-   ```
+1. Open JetBrains Rider.
+2. Open the cloned `Gml.Client` project in Rider:
 
-### Troubleshooting
+    - Select `Open` from the welcome screen.
+    - Navigate to the `Gml.Client` project directory and select it.
 
-If you encounter any issues during the installation, ensure the following:
+3. After the project is loaded, Rider will restore the necessary dependencies. This may take some time.
 
-- Ensure the .NET SDK is correctly installed and the `DOTNET_HOME` environment variable is set.
-- Ensure Git is correctly installed and available in the terminal.
-- Make sure you have the necessary permissions to run the build and execute the application.
+## Building the Project
 
-For additional help, check the project's issue tracker or community forums.
+1. Ensure your project target framework is correctly set to .NET 8.0. You can verify and set the target framework in the
+   `.csproj` file(s) of your projects:
 
-### Updating
+    ```xml
+    <TargetFramework>net8.0</TargetFramework>
+    ```
 
-To update the GamerVII Launcher to the latest version, navigate to the project directory and pull the latest changes
-from the repository:
+2. Build the project by selecting `Build > Build Solution` from the main menu or by pressing `Ctrl+Shift+B`.
 
-```bash
-git pull origin main
-git submodule update --recursive --remote
-dotnet build
-```
+## Running the Project
 
-Then, run the launcher again using the command mentioned earlier.
+1. Ensure the correct startup configuration is selected (typically the main executable project).
+2. Run the project by selecting `Run > Run` from the main menu or by pressing `Shift+F10`.
 
-### Uninstallation
+## Publishing the Project
 
-To uninstall the GamerVII Launcher, simply delete the project directory:
+1. Open a terminal.
+2. Navigate to the project directory if not already there:
 
-```bash
-rm -rf minecraft-launcher
-```
+    ```sh
+    cd Gml.Client
+    ```
+
+3. Run the publish command using the .NET CLI:
+
+    ```sh
+    dotnet publish -c Release -o ./publish
+    ```
+
+   This will publish the project in the `Release` configuration to the `./publish` directory.
+
+## Contributing
+
+If you'd like to contribute to the project, please fork the repository and create a pull request. Make sure your code
+adheres to the project's coding standards and passes all the tests.
+
+For any issues or feature requests, you can open an issue on
+the [GitHub Issues](https://github.com/Gml-Launcher/Gml.Client/issues) page of the repository.
+
+## Additional Resources
+
+- [JetBrains Rider Documentation](https://www.jetbrains.com/help/rider/Introduction.html)
+- [.NET Documentation](https://learn.microsoft.com/en-us/dotnet/)
+
+By following the above steps, you should be able to set up, develop, and publish the `Gml.Client` project successfully.
+Happy coding!
