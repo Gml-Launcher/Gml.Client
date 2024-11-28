@@ -7,7 +7,7 @@ public class LauncherUpdater
 {
     public static void FileReplaceAndRestart(OsType osType, string newFileName, string originalFileName)
     {
-        Start(osType, newFileName);
+        Start(osType, newFileName, true);
     }
 
     private static void ExecuteCommand(string command, OsType osType, string? workingDirectory = null)

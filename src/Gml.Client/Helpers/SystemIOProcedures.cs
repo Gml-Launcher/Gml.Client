@@ -95,7 +95,7 @@ public class SystemIoProcedures
 
             bool IsNeedRemove(FileInfo f)
             {
-                return !hashSet.Contains(f.FullName) && !allowedPaths.Any(path => f.FullName.StartsWith(path));
+                return f.Length == 0 || !hashSet.Contains(f.FullName) && !allowedPaths.Any(path => f.FullName.StartsWith(path));
             }
 
             foreach (var file in localFiles.Where(IsNeedRemove))

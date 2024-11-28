@@ -398,20 +398,11 @@ public class ApiProcedures
     private async Task DownloadFileWithRetry(string installationDirectory, ProfileFileReadDto file,
         SemaphoreSlim throttler, CancellationToken cancellationToken = default)
     {
-#if DEBUG
-        Debug.WriteLine("Attempting to download file with retry.");
-#endif
         // Try to download file up to 3 times
         for (var attempt = 1; attempt <= 3; attempt++)
             try
             {
-#if DEBUG
-                Debug.WriteLine($"Download attempt {attempt} for file: {file.Name}");
-#endif
                 await DownloadFile(installationDirectory, file, throttler, cancellationToken);
-#if DEBUG
-                Debug.WriteLine("Download succeeded.");
-#endif
                 return;
             }
             catch (IOException ex)
@@ -461,9 +452,6 @@ public class ApiProcedures
     private async Task DownloadFile(string installationDirectory, ProfileFileReadDto file, SemaphoreSlim throttler,
         CancellationToken cancellationToken)
     {
-#if DEBUG
-        Debug.WriteLine($"Downloading file: {file.Name}");
-#endif
         await throttler.WaitAsync(cancellationToken);
 
         try
@@ -478,9 +466,9 @@ public class ApiProcedures
 
             var url = $"{_httpClient.BaseAddress.AbsoluteUri}api/v1/file/{file.Hash}";
 
-            using (var fs = new FileStream(localPath, FileMode.OpenOrCreate))
+            await using (var fs = new FileStream(localPath, FileMode.OpenOrCreate))
             {
-                using (var stream = await _httpClient.GetStreamAsync(url))
+                await using (var stream = await _httpClient.GetStreamAsync(url))
                 {
                     await stream.CopyToAsync(fs, cancellationToken);
                 }
