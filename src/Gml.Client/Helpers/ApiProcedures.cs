@@ -50,12 +50,21 @@ public class ApiProcedures
     public IObservable<int> LoadedFilesCount => _loadedFilesCount;
     internal event EventHandler<string>? FileAdded;
 
-    public async Task<ResponseMessage<List<ProfileReadDto>>> GetProfiles()
+    [Obsolete("Use method with accessToken")]
+    public Task<ResponseMessage<List<ProfileReadDto>>> GetProfiles()
+    {
+        return GetProfiles(string.Empty);
+    }
+
+    public async Task<ResponseMessage<List<ProfileReadDto>>> GetProfiles(string accessToken)
     {
 #if DEBUG
         Debug.WriteLine("Calling GetProfiles()");
 #endif
         Debug.Write("Load profiles: ");
+        if (!_httpClient.DefaultRequestHeaders.TryGetValues("Authorization", out _))
+            _httpClient.DefaultRequestHeaders.Add("Authorization", $"Bearer {accessToken}");
+
         var response = await _httpClient.GetAsync("/api/v1/profiles").ConfigureAwait(false);
 
         Debug.WriteLine(response.IsSuccessStatusCode ? "Success load" : "Failed load");

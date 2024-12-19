@@ -6,4 +6,5 @@ public class AuthResult
     public bool IsSuccess { get; set; }
     public string? Login { get; set; }
     public string? Uuid { get; set; }
+    public string? Message { get; set; }
 }
