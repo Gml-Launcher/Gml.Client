@@ -19,6 +19,7 @@ public interface IGmlClientManager : IDisposable
     string InstallationDirectory { get; }
     bool SkipUpdate { get; set; }
     Task<ResponseMessage<List<ProfileReadDto>>> GetProfiles();
+    Task<ResponseMessage<List<ProfileReadDto>>> GetProfiles(string accessToken);
     Task<ResponseMessage<ProfileReadInfoDto?>?> GetProfileInfo(ProfileCreateInfoDto profileDto);
     public Task<Process> GetProcess(ProfileReadInfoDto profileDto, OsType osType);
     Task DownloadNotInstalledFiles(ProfileReadInfoDto profileInfo, CancellationToken cancellationToken);
