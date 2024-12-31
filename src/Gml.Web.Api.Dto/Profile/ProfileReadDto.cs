@@ -14,6 +14,7 @@ public class ProfileReadDto
     public string LaunchVersion { get; set; }
     public string IconBase64 { get; set; }
     public string Background { get; set; }
+    public bool IsEnabled { get; set; }
     public string JvmArguments { get; set; }
     public string GameArguments { get; set; }
     public ProfileState State { get; set; }

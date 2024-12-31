@@ -62,9 +62,15 @@ public class GmlClientManager : IGmlClientManager
 
     public bool SkipUpdate { get; set; }
 
+    [Obsolete("Use method with accessToken")]
     public Task<ResponseMessage<List<ProfileReadDto>>> GetProfiles()
     {
         return _apiProcedures.GetProfiles();
+    }
+
+    public Task<ResponseMessage<List<ProfileReadDto>>> GetProfiles(string accessToken)
+    {
+        return _apiProcedures.GetProfiles(accessToken);
     }
 
     public Task LoadDiscordRpc()
@@ -169,6 +175,10 @@ public class GmlClientManager : IGmlClientManager
 
     public async Task OpenServerConnection(IUser user)
     {
+        _profilesChangedEvent?.Dispose();
+        if (_launchBackendConnection is not null)
+            await _launchBackendConnection.DisposeAsync();
+
         _launchBackendConnection = new SignalRConnect($"{_webSocketAddress}/ws/launcher", user);
         _profilesChangedEvent ??= _launchBackendConnection.ProfilesChanges.Subscribe(_profilesChanged);
         await _launchBackendConnection.BuildAndConnect();
