@@ -320,6 +320,7 @@ public class ApiProcedures
         if (response.IsSuccessStatusCode && dto != null)
         {
             authUser.Uuid = dto.Data!.Uuid;
+            authUser.Name = dto.Data.Name;
             authUser.AccessToken = dto.Data!.AccessToken;
             authUser.Has2Fa = false;
             authUser.ExpiredDate = dto.Data!.ExpiredDate;
