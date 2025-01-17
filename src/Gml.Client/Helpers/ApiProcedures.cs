@@ -207,14 +207,13 @@ public class ApiProcedures
             case OsType.Undefined:
                 break;
             case OsType.Linux:
+            case OsType.OsX:
                 var chmodStartInfo = new ProcessStartInfo
                 {
                     FileName = "/bin/bash",
                     Arguments = $"-c \"chmod +x {startInfoFileName}\""
                 };
                 Process.Start(chmodStartInfo);
-                break;
-            case OsType.OsX:
                 break;
             case OsType.Windows:
                 break;
