@@ -5,6 +5,7 @@ using System.Runtime.InteropServices;
 using Gml.Client.Extensions;
 using Gml.Client.Helpers;
 using Gml.Web.Api.Domains.System;
+using Gml.Web.Api.Dto.Files;
 using Gml.Web.Api.Dto.Messages;
 using Gml.Web.Api.Dto.Mods;
 using Gml.Web.Api.Dto.Profile;
@@ -163,6 +164,12 @@ public class GmlClientManager : IGmlClientManager
 
         var updateFiles = _systemProcedures.FindErroneousFiles(profileInfo, InstallationDirectory);
         await _apiProcedures.DownloadFiles(InstallationDirectory, updateFiles.ToArray(), 60, cancellationToken);
+    }
+
+    public async Task DownloadFiles(ProfileFileReadDto[] profileInfo,
+        CancellationToken cancellationToken = default)
+    {
+        await _apiProcedures.DownloadFiles(InstallationDirectory, profileInfo.ToArray(), 60, cancellationToken);
     }
 
     public async Task<(IUser User, string Message, IEnumerable<string> Details)> Auth(string login, string password,

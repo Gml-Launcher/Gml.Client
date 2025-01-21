@@ -1,6 +1,7 @@
 using System.Diagnostics;
 using System.Runtime.InteropServices;
 using Gml.Web.Api.Domains.System;
+using Gml.Web.Api.Dto.Files;
 using Gml.Web.Api.Dto.Messages;
 using Gml.Web.Api.Dto.Mods;
 using Gml.Web.Api.Dto.Profile;
@@ -40,4 +41,7 @@ public interface IGmlClientManager : IDisposable
     Task<IPlayerTexture?> GetTexturesByName(string userName);
     Task<ResponseMessage<List<ModReadDto>>> GetOptionalMods(string profileName, string accessToken);
     bool ToggleOptionalMod(string path, bool isEnebled);
+
+    Task DownloadFiles(ProfileFileReadDto[] profileInfo,
+        CancellationToken cancellationToken = default);
 }

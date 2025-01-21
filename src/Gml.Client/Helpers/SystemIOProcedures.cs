@@ -128,14 +128,15 @@ public class SystemIoProcedures
 
     private static bool CompareHashOptionalMods(ProfileReadInfoDto profileInfo, FileInfo fileInfo)
     {
-        using var hash = new SHA256Managed();
-        var fileHash = SystemHelper.CalculateFileHash(fileInfo.FullName, hash);
-        if (ApiProcedures.IsOptionalMod(fileInfo.FullName))
+        if (!ApiProcedures.IsOptionalMod(fileInfo.FullName))
         {
-            return profileInfo.Files.All(c => c.Hash != fileHash);
+            return profileInfo.Files.Any(c => c.Name == fileInfo.Name) == false;
         }
 
-        return false;
+        using var hash = new SHA256Managed();
+        var fileHash = SystemHelper.CalculateFileHash(fileInfo.FullName, hash);
+
+        return profileInfo.Files.All(c => c.Hash != fileHash);
     }
 
     private string GetRealFilePath(string installationDirectory, ProfileFileReadDto file)
