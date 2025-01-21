@@ -10,4 +10,5 @@ public interface ITextureProvider
     Task<string> SetCloak(IUser user, string skinUrl);
     Task<Stream> GetSkinStream(string? textureUrl);
     Task<Stream> GetCloakStream(string? userTextureSkinUrl);
+    Task<Stream> GetHeadByNameStream(string? userName);
 }

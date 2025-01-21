@@ -18,7 +18,7 @@ public class AzuriomAuthResult
     public bool EmailVerified { get; set; }
 
     [JsonProperty("money")]
-    public int Money { get; set; }
+    public decimal Money { get; set; }
 
     [JsonProperty("banned")]
     public bool Banned { get; set; }

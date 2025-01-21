@@ -6,6 +6,7 @@ using Gml.Client.Extensions;
 using Gml.Client.Helpers;
 using Gml.Web.Api.Domains.System;
 using Gml.Web.Api.Dto.Messages;
+using Gml.Web.Api.Dto.Mods;
 using Gml.Web.Api.Dto.Profile;
 using GmlCore.Interfaces.Storage;
 using GmlCore.Interfaces.User;
@@ -66,6 +67,31 @@ public class GmlClientManager : IGmlClientManager
     public Task<ResponseMessage<List<ProfileReadDto>>> GetProfiles()
     {
         return _apiProcedures.GetProfiles();
+    }
+
+    public Task<ResponseMessage<List<ModsDetailsInfoDto>>> GetOptionalModsInfo(string accessToken)
+    {
+        return _apiProcedures.GetOptionalModsInfo(accessToken);
+    }
+
+    public Task<ResponseMessage<List<ModReadDto>>> GetOptionalMods(string profileName, string accessToken)
+    {
+        return _apiProcedures.GetOptionalMods(profileName, accessToken);
+    }
+
+    public bool ToggleOptionalMod(string path, bool isEnebled)
+    {
+        try
+        {
+            var newFileName = _apiProcedures.ToggleOptionalMod(path, isEnebled);
+            File.Move(path, newFileName);
+        }
+        catch
+        {
+            return false;
+        }
+
+        return true;
     }
 
     public Task<ResponseMessage<List<ProfileReadDto>>> GetProfiles(string accessToken)
@@ -177,7 +203,11 @@ public class GmlClientManager : IGmlClientManager
     {
         _profilesChangedEvent?.Dispose();
         if (_launchBackendConnection is not null)
+        {
             await _launchBackendConnection.DisposeAsync();
+            _profilesChangedEvent?.Dispose();
+            _profilesChangedEvent = null;
+        }
 
         _launchBackendConnection = new SignalRConnect($"{_webSocketAddress}/ws/launcher", user);
         _profilesChangedEvent ??= _launchBackendConnection.ProfilesChanges.Subscribe(_profilesChanged);

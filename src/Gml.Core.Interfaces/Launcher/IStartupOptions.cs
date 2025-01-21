@@ -1,14 +1,17 @@
-﻿namespace GmlCore.Interfaces.Launcher;
+﻿using Gml.Web.Api.Domains.System;
 
-public interface IStartupOptions
+namespace GmlCore.Interfaces.Launcher
 {
-    int MinimumRamMb { get; set; }
-    int MaximumRamMb { get; set; }
-    bool FullScreen { get; set; }
-    int ScreenWidth { get; set; }
-    int ScreenHeight { get; set; }
-    string? ServerIp { get; set; }
-    int ServerPort { get; set; }
-    public string OsName { get; set; }
-    public string OsArch { get; set; }
+    public interface IStartupOptions
+    {
+        int MinimumRamMb { get; set; }
+        int MaximumRamMb { get; set; }
+        bool FullScreen { get; set; }
+        int ScreenWidth { get; set; }
+        int ScreenHeight { get; set; }
+        string? ServerIp { get; set; }
+        int ServerPort { get; set; }
+        public string OsName { get; set; }
+        public string OsArch { get; set; }
+    }
 }
