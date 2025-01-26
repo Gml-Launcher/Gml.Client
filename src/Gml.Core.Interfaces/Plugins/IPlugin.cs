@@ -1,9 +1,10 @@
 using System.Threading.Tasks;
 using GmlCore.Interfaces.Launcher;
 
-namespace GmlCore.Interfaces.Plugins;
-
-public interface IPlugin
+namespace GmlCore.Interfaces.Plugins
 {
-    public Task Execute(ILauncherInfo launcherInfo);
+    public interface IPlugin
+    {
+        public Task Execute(ILauncherInfo launcherInfo);
+    }
 }

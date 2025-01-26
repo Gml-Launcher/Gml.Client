@@ -93,9 +93,19 @@ public class SystemIoProcedures
                     .Select(wf => Path.GetFullPath(GetRealFilePath(_installationDirectory, wf))))
                 .ToHashSet();
 
-            bool IsNeedRemove(FileInfo f)
+            bool IsNeedRemove(FileInfo fileInfo)
             {
-                return f.Length == 0 || !hashSet.Contains(f.FullName) && !allowedPaths.Any(path => f.FullName.StartsWith(path));
+                if (fileInfo.Length == 0)
+                {
+                    return true;
+                }
+
+                if (!hashSet.Contains(fileInfo.FullName) && !allowedPaths.Any(path => fileInfo.FullName.StartsWith(path)))
+                {
+                    return CompareHashOptionalMods(profileInfo, fileInfo);
+                }
+
+                return CompareHashOptionalMods(profileInfo, fileInfo);
             }
 
             foreach (var file in localFiles.Where(IsNeedRemove))
@@ -114,6 +124,19 @@ public class SystemIoProcedures
         }
 
         return Task.CompletedTask;
+    }
+
+    private static bool CompareHashOptionalMods(ProfileReadInfoDto profileInfo, FileInfo fileInfo)
+    {
+        if (!ApiProcedures.IsOptionalMod(fileInfo.FullName))
+        {
+            return profileInfo.Files.Any(c => c.Name == fileInfo.Name) == false;
+        }
+
+        using var hash = new SHA256Managed();
+        var fileHash = SystemHelper.CalculateFileHash(fileInfo.FullName, hash);
+
+        return profileInfo.Files.All(c => c.Hash != fileHash);
     }
 
     private string GetRealFilePath(string installationDirectory, ProfileFileReadDto file)

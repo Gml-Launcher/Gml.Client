@@ -1,4 +1,4 @@
-namespace GmlCore.Interfaces.User;
+﻿namespace GmlCore.Interfaces.User;
 
 public interface IPlayerTexture
 {

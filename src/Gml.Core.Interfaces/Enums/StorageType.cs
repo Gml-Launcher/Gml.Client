@@ -1,7 +1,8 @@
-namespace GmlCore.Interfaces.Enums;
-
-public enum StorageType
+namespace GmlCore.Interfaces.Enums
 {
-    LocalStorage = 0,
-    S3 = 1
+    public enum StorageType
+    {
+        LocalStorage = 0,
+        S3 = 1
+    }
 }

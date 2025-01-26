@@ -60,10 +60,10 @@ public class User
     public string TwoFactorSecretTemp { get; set; }
 
     [JsonProperty("real")]
-    public int Real { get; set; }
+    public decimal Real { get; set; }
 
     [JsonProperty("virtual")]
-    public int Virtual { get; set; }
+    public decimal Virtual { get; set; }
 
     [JsonProperty("perms")]
     public object Perms { get; set; }

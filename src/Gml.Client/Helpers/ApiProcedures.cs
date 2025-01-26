@@ -10,6 +10,7 @@ using Gml.Web.Api.Domains.System;
 using Gml.Web.Api.Dto.Files;
 using Gml.Web.Api.Dto.Integration;
 using Gml.Web.Api.Dto.Messages;
+using Gml.Web.Api.Dto.Mods;
 using Gml.Web.Api.Dto.Player;
 using Gml.Web.Api.Dto.Profile;
 using Gml.Web.Api.Dto.Texture;
@@ -207,14 +208,13 @@ public class ApiProcedures
             case OsType.Undefined:
                 break;
             case OsType.Linux:
+            case OsType.OsX:
                 var chmodStartInfo = new ProcessStartInfo
                 {
                     FileName = "/bin/bash",
                     Arguments = $"-c \"chmod +x {startInfoFileName}\""
                 };
                 Process.Start(chmodStartInfo);
-                break;
-            case OsType.OsX:
                 break;
             case OsType.Windows:
                 break;
@@ -320,6 +320,7 @@ public class ApiProcedures
         if (response.IsSuccessStatusCode && dto != null)
         {
             authUser.Uuid = dto.Data!.Uuid;
+            authUser.Name = dto.Data.Name;
             authUser.AccessToken = dto.Data!.AccessToken;
             authUser.Has2Fa = false;
             authUser.ExpiredDate = dto.Data!.ExpiredDate;
@@ -473,6 +474,11 @@ public class ApiProcedures
                 file.Directory.TrimStart(Path.DirectorySeparatorChar).TrimStart('\\'));
             await EnsureDirectoryExists(localPath);
 
+            if (IsOptionalMod(localPath))
+            {
+                localPath = ToggleOptionalMod(localPath);
+            }
+
             var url = $"{_httpClient.BaseAddress.AbsoluteUri}api/v1/file/{file.Hash}";
 
             await using (var fs = new FileStream(localPath, FileMode.OpenOrCreate))
@@ -509,6 +515,21 @@ public class ApiProcedures
         {
             throttler.Release();
         }
+    }
+
+    public string ToggleOptionalMod(string localPath)
+    {
+        if (IsOptionalMod(localPath))
+        {
+            return $"{localPath}.disabled";
+        }
+
+        return localPath.Replace(".disabled", string.Empty);
+    }
+
+    public static bool IsOptionalMod(string localPath)
+    {
+        return localPath.Contains("-optional-mod.jar");
     }
 
     private Task EnsureDirectoryExists(string localPath)
@@ -707,5 +728,63 @@ public class ApiProcedures
         Debug.WriteLine($"OS name determined: {versionBuilder}");
 #endif
         return versionBuilder.ToString();
+    }
+
+    public async Task<ResponseMessage<List<ModsDetailsInfoDto>>> GetOptionalModsInfo(string accessToken)
+    {
+#if DEBUG
+        Debug.WriteLine("Calling GetOptionalMods()");
+#endif
+        Debug.Write("Load profiles: ");
+        if (!_httpClient.DefaultRequestHeaders.TryGetValues("Authorization", out _))
+            _httpClient.DefaultRequestHeaders.Add("Authorization", $"Bearer {accessToken}");
+
+        var response = await _httpClient.GetAsync("/api/v1/mods/details").ConfigureAwait(false);
+
+        Debug.WriteLine(response.IsSuccessStatusCode ? "Success load" : "Failed load");
+
+        if (!response.IsSuccessStatusCode)
+            return new ResponseMessage<List<ModsDetailsInfoDto>>();
+
+        var content = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
+#if DEBUG
+        Debug.WriteLine(response.IsSuccessStatusCode
+            ? $"Mods loaded successfully: {content}"
+            : "Failed to load profiles.");
+#endif
+        return JsonConvert.DeserializeObject<ResponseMessage<List<ModsDetailsInfoDto>>>(content)
+               ?? new ResponseMessage<List<ModsDetailsInfoDto>>();
+    }
+
+    public async Task<ResponseMessage<List<ModReadDto>>> GetOptionalMods(string profileName, string accessToken)
+    {
+#if DEBUG
+        Debug.WriteLine("Calling GetOptionalMods()");
+#endif
+        Debug.Write("Load profiles: ");
+        if (!_httpClient.DefaultRequestHeaders.TryGetValues("Authorization", out _))
+            _httpClient.DefaultRequestHeaders.Add("Authorization", $"Bearer {accessToken}");
+
+        var response = await _httpClient.GetAsync($"/api/v1/profiles/{profileName}/mods/optionals")
+            .ConfigureAwait(false);
+
+        Debug.WriteLine(response.IsSuccessStatusCode ? "Success load" : "Failed load");
+
+        if (!response.IsSuccessStatusCode)
+            return new ResponseMessage<List<ModReadDto>>();
+
+        var content = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
+#if DEBUG
+        Debug.WriteLine(response.IsSuccessStatusCode
+            ? $"Mods loaded successfully: {content}"
+            : "Failed to load profiles.");
+#endif
+        return JsonConvert.DeserializeObject<ResponseMessage<List<ModReadDto>>>(content)
+               ?? new ResponseMessage<List<ModReadDto>>();
+    }
+
+    public string ToggleOptionalMod(string localPath, bool isEnabled)
+    {
+        return isEnabled ? localPath.Replace(".disabled", string.Empty) : $"{localPath}.disabled";
     }
 }

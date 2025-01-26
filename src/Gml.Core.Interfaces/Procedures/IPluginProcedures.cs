@@ -1,8 +1,9 @@
 using System.Threading.Tasks;
 
-namespace GmlCore.Interfaces.Procedures;
-
-public interface IPluginProcedures
+namespace GmlCore.Interfaces.Procedures
 {
-    Task LoadPluginsAsync();
+    public interface IPluginProcedures
+    {
+        Task LoadPluginsAsync();
+    }
 }
