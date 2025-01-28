@@ -95,16 +95,16 @@ public class SystemIoProcedures
 
             bool IsNeedRemove(FileInfo fileInfo)
             {
-                // Remove empty files
-                if (fileInfo.Length == 0)
-                {
-                    return true;
-                }
-
                 // Not remove allowed paths
                 if (allowedPaths.Any(path => fileInfo.FullName.StartsWith(path)))
                 {
                     return false;
+                }
+
+                // Remove empty files
+                if (fileInfo.Length == 0)
+                {
+                    return true;
                 }
 
                 var filesByName = profileInfo.Files
