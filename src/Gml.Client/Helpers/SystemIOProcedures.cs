@@ -95,17 +95,34 @@ public class SystemIoProcedures
 
             bool IsNeedRemove(FileInfo fileInfo)
             {
+                // Remove empty files
                 if (fileInfo.Length == 0)
                 {
                     return true;
                 }
 
-                if (!hashSet.Contains(fileInfo.FullName) && !allowedPaths.Any(path => fileInfo.FullName.StartsWith(path)))
+                // Not remove allowed paths
+                if (allowedPaths.Any(path => fileInfo.FullName.StartsWith(path)))
                 {
-                    return CompareHashOptionalMods(profileInfo, fileInfo);
+                    return false;
                 }
 
-                return CompareHashOptionalMods(profileInfo, fileInfo);
+                var filesByName = profileInfo.Files
+                    .Where(c => c.Name == fileInfo.Name)
+                    .ToArray();
+
+                if (filesByName.Any(c => c.Size != fileInfo.Length))
+                {
+                    return true;
+                }
+
+                if (profileInfo.WhiteListFiles.Any(c => fileInfo.FullName.EndsWith(c.Directory)))
+                {
+                    return false;
+                }
+
+                return filesByName.Any(c => HasFileByHash(c, fileInfo)) == false;
+
             }
 
             foreach (var file in localFiles.Where(IsNeedRemove))
@@ -126,17 +143,11 @@ public class SystemIoProcedures
         return Task.CompletedTask;
     }
 
-    private static bool CompareHashOptionalMods(ProfileReadInfoDto profileInfo, FileInfo fileInfo)
+    private static bool HasFileByHash(ProfileFileReadDto profileFile, FileInfo fileInfo)
     {
-        if (!ApiProcedures.IsOptionalMod(fileInfo.FullName))
-        {
-            return profileInfo.Files.Any(c => c.Name == fileInfo.Name) == false;
-        }
-
         using var hash = new SHA256Managed();
-        var fileHash = SystemHelper.CalculateFileHash(fileInfo.FullName, hash);
 
-        return profileInfo.Files.All(c => c.Hash != fileHash);
+        return profileFile.Hash == SystemHelper.CalculateFileHash(fileInfo.FullName, hash);;
     }
 
     private string GetRealFilePath(string installationDirectory, ProfileFileReadDto file)
