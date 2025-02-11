@@ -164,6 +164,20 @@ public class GmlClientManager : IGmlClientManager
 
         var updateFiles = _systemProcedures.FindErroneousFiles(profileInfo, InstallationDirectory);
         await _apiProcedures.DownloadFiles(InstallationDirectory, updateFiles.ToArray(), 60, cancellationToken);
+
+        _ = ValidateFilesBeforeInstall(profileInfo);
+    }
+
+    private Task ValidateFilesBeforeInstall(ProfileReadInfoDto profileInfo)
+    {
+        var updateFiles = _systemProcedures.FindErroneousFiles(profileInfo, InstallationDirectory);
+
+        if (updateFiles.Any())
+        {
+            SentrySdk.CaptureException(new FileLoadException($"Files not found: {string.Join(Environment.NewLine, updateFiles.Select(c => c.Directory))}"));
+        }
+
+        return Task.CompletedTask;
     }
 
     public async Task DownloadFiles(ProfileFileReadDto[] profileInfo,
