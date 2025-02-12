@@ -111,14 +111,14 @@ public class SystemIoProcedures
                     .Where(c => c.Name == fileInfo.Name)
                     .ToArray();
 
-                if (filesByName.Any(c => c.Size != fileInfo.Length))
-                {
-                    return true;
-                }
-
                 if (profileInfo.WhiteListFiles.Any(c => fileInfo.FullName.EndsWith(c.Directory)))
                 {
                     return false;
+                }
+                
+                if (filesByName.Any(c => c.Size != fileInfo.Length))
+                {
+                    return true;
                 }
 
                 return filesByName.Any(c => HasFileByHash(c, fileInfo)) == false;
