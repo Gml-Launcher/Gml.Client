@@ -126,6 +126,8 @@ namespace GmlCore.Interfaces.Launcher
         /// </summary>
         ProfileState State { get; set; }
 
+        string DisplayName { get; set; }
+
         /// <summary>
         /// Validates the game profile.
         /// </summary>
@@ -215,5 +217,6 @@ namespace GmlCore.Interfaces.Launcher
         Task<IMod> AddMod(string fileName, Stream streamData);
         Task<IMod> AddOptionalMod(string fileName, Stream streamData);
         Task<bool> RemoveMod(string modName);
+        Task SetState(ProfileState state);
     }
 }
