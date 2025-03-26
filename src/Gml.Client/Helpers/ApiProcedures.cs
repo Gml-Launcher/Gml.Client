@@ -494,7 +494,7 @@ public class ApiProcedures
             _progressChanged.OnNext(_progress);
             _loadedFilesCount.OnNext(_finishedFilesCount);
 #if DEBUG
-            Debug.WriteLine($"{_finishedFilesCount}/{_progressFilesCount} files downloaded.");
+            Debug.WriteLine($"{_finishedFilesCount}/{_progressFilesCount} files downloaded [{file.Directory}].");
 #endif
         }
         catch (IOException ex)
