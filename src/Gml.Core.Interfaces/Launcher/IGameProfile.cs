@@ -126,7 +126,16 @@ namespace GmlCore.Interfaces.Launcher
         /// </summary>
         ProfileState State { get; set; }
 
+        /// <summary>
+        /// Represents the display name of a game profile, typically used for
+        /// identifying or labeling the profile in user interfaces or descriptions.
+        /// </summary>
         string DisplayName { get; set; }
+
+        /// <summary>
+        /// Indicates whether the profile can be modified.
+        /// </summary>
+        bool CanEdit { get; }
 
         /// <summary>
         /// Validates the game profile.
@@ -218,5 +227,6 @@ namespace GmlCore.Interfaces.Launcher
         Task<IMod> AddOptionalMod(string fileName, Stream streamData);
         Task<bool> RemoveMod(string modName);
         Task SetState(ProfileState state);
+        Task<bool> CanLoadMods();
     }
 }

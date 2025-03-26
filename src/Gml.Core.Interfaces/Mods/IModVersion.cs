@@ -10,4 +10,5 @@ public interface IModVersion
     DateTimeOffset DatePublished { get; set; }
     int Downloads { get; set; }
     string VersionName { get; set; }
+    List<string> Files { get; set; }
 }

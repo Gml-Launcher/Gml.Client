@@ -13,5 +13,6 @@ public interface IMod
 public enum ModType
 {
     Local,
-    Modrinth
+    Modrinth,
+    CurseForge
 }

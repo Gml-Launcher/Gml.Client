@@ -11,10 +11,12 @@ using Gml.Web.Api.Dto.Files;
 using Gml.Web.Api.Dto.Integration;
 using Gml.Web.Api.Dto.Messages;
 using Gml.Web.Api.Dto.Mods;
+using Gml.Web.Api.Dto.News;
 using Gml.Web.Api.Dto.Player;
 using Gml.Web.Api.Dto.Profile;
 using Gml.Web.Api.Dto.Texture;
 using Gml.Web.Api.Dto.User;
+using GmlCore.Interfaces.News;
 using GmlCore.Interfaces.Storage;
 using GmlCore.Interfaces.User;
 using Newtonsoft.Json;
@@ -786,5 +788,29 @@ public class ApiProcedures
     public string ToggleOptionalMod(string localPath, bool isEnabled)
     {
         return isEnabled ? localPath.Replace(".disabled", string.Empty) : $"{localPath}.disabled";
+    }
+
+    public async Task<ResponseMessage<List<NewsReadDto>>> GetNews()
+    {
+#if DEBUG
+        Debug.WriteLine("Calling GetNews()");
+#endif
+
+        var response = await _httpClient.GetAsync($"/api/v1/integrations/news/list")
+            .ConfigureAwait(false);
+
+        Debug.WriteLine(response.IsSuccessStatusCode ? "Success load" : "Failed load");
+
+        if (!response.IsSuccessStatusCode)
+            return new ResponseMessage<List<NewsReadDto>>();
+
+        var content = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
+#if DEBUG
+        Debug.WriteLine(response.IsSuccessStatusCode
+            ? $"Mods loaded successfully: {content}"
+            : "Failed to load profiles.");
+#endif
+        return JsonConvert.DeserializeObject<ResponseMessage<List<NewsReadDto>>>(content)
+               ?? new ResponseMessage<List<NewsReadDto>>();
     }
 }
