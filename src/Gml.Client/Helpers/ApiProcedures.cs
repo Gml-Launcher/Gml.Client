@@ -65,24 +65,39 @@ public class ApiProcedures
         Debug.WriteLine("Calling GetProfiles()");
 #endif
         Debug.Write("Load profiles: ");
-        if (!_httpClient.DefaultRequestHeaders.TryGetValues("Authorization", out _))
-            _httpClient.DefaultRequestHeaders.Add("Authorization", $"Bearer {accessToken}");
+        const int maxRetries = 3;
 
-        var response = await _httpClient.GetAsync("/api/v1/profiles").ConfigureAwait(false);
+        for (int retryCount = 0; retryCount < maxRetries; retryCount++)
+        {
+            try
+            {
+                _httpClient.DefaultRequestHeaders.Remove("Authorization");
+                _httpClient.DefaultRequestHeaders.Add("Authorization", $"Bearer {accessToken}");
 
-        Debug.WriteLine(response.IsSuccessStatusCode ? "Success load" : "Failed load");
+                var response = await _httpClient.GetAsync("/api/v1/profiles").ConfigureAwait(false);
 
-        if (!response.IsSuccessStatusCode)
-            return new ResponseMessage<List<ProfileReadDto>>();
+                Debug.WriteLine(response.IsSuccessStatusCode ? "Success load" : "Failed load");
 
-        var content = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
+                if (!response.IsSuccessStatusCode)
+                    return new ResponseMessage<List<ProfileReadDto>>();
+
+                var content = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
 #if DEBUG
-        Debug.WriteLine(response.IsSuccessStatusCode
-            ? $"Profiles loaded successfully: {content}"
-            : "Failed to load profiles.");
+                Debug.WriteLine($"Response content: {content}");
 #endif
-        return JsonConvert.DeserializeObject<ResponseMessage<List<ProfileReadDto>>>(content)
-               ?? new ResponseMessage<List<ProfileReadDto>>();
+                return JsonConvert.DeserializeObject<ResponseMessage<List<ProfileReadDto>>>(content)
+                       ?? new ResponseMessage<List<ProfileReadDto>>();
+            }
+            catch (Exception ex) when (retryCount < maxRetries - 1)
+            {
+#if DEBUG
+                Debug.WriteLine($"Exception on attempt {retryCount + 1}: {ex.Message}");
+                SentrySdk.CaptureException(ex);
+#endif
+            }
+        }
+
+        throw new Exception("Failed to load profiles after maximum retry attempts.");
     }
 
     public async Task<ResponseMessage<ProfileReadInfoDto?>?> GetProfileInfo(ProfileCreateInfoDto profileCreateInfoDto)
@@ -745,8 +760,10 @@ public class ApiProcedures
         Debug.WriteLine("Calling GetOptionalMods()");
 #endif
         Debug.Write("Load profiles: ");
-        if (!_httpClient.DefaultRequestHeaders.TryGetValues("Authorization", out _))
-            _httpClient.DefaultRequestHeaders.Add("Authorization", $"Bearer {accessToken}");
+        if (_httpClient.DefaultRequestHeaders.TryGetValues("Authorization", out _))
+            _httpClient.DefaultRequestHeaders.Remove("Authorization");
+
+        _httpClient.DefaultRequestHeaders.Add("Authorization", $"Bearer {accessToken}");
 
         var response = await _httpClient.GetAsync("/api/v1/mods/details").ConfigureAwait(false);
 
@@ -771,8 +788,10 @@ public class ApiProcedures
         Debug.WriteLine("Calling GetOptionalMods()");
 #endif
         Debug.Write("Load profiles: ");
-        if (!_httpClient.DefaultRequestHeaders.TryGetValues("Authorization", out _))
-            _httpClient.DefaultRequestHeaders.Add("Authorization", $"Bearer {accessToken}");
+        if (_httpClient.DefaultRequestHeaders.TryGetValues("Authorization", out _))
+            _httpClient.DefaultRequestHeaders.Remove("Authorization");
+
+        _httpClient.DefaultRequestHeaders.Add("Authorization", $"Bearer {accessToken}");
 
         var response = await _httpClient.GetAsync($"/api/v1/profiles/{profileName}/mods/optionals")
             .ConfigureAwait(false);
