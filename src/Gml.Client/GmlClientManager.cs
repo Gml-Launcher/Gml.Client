@@ -167,12 +167,10 @@ public class GmlClientManager : IGmlClientManager
     public async Task DownloadNotInstalledFiles(ProfileReadInfoDto profileInfo,
         CancellationToken cancellationToken = default)
     {
-        await _systemProcedures.RemoveFiles(profileInfo);
+        var validateResult = await _systemProcedures.ValidateFilesAsync(profileInfo, InstallationDirectory);
 
-        var updateFiles = _systemProcedures.FindErroneousFiles(profileInfo, InstallationDirectory);
-        await _apiProcedures.DownloadFiles(InstallationDirectory, updateFiles.ToArray(), 60, cancellationToken);
-
-        _ = ValidateFilesBeforeInstall(profileInfo);
+        await _systemProcedures.RemoveFiles(InstallationDirectory, validateResult.ToDelete);
+        await _apiProcedures.DownloadFiles(InstallationDirectory, validateResult.ToUpdate, 60, cancellationToken);
     }
 
     private Task ValidateFilesBeforeInstall(ProfileReadInfoDto profileInfo)

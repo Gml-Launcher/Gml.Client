@@ -410,8 +410,8 @@ public class ApiProcedures
     private async Task DownloadFileWithRetry(string installationDirectory, ProfileFileReadDto file,
         SemaphoreSlim throttler, CancellationToken cancellationToken = default)
     {
-        // Try to download file up to 3 times
-        for (var attempt = 1; attempt <= 3; attempt++)
+        // Try to download file up to 5 times
+        for (var attempt = 1; attempt <= 5; attempt++)
             try
             {
                 await DownloadFile(installationDirectory, file, throttler, cancellationToken);
@@ -489,6 +489,13 @@ public class ApiProcedures
                 {
                     await stream.CopyToAsync(fs, cancellationToken);
                 }
+
+                #if DEBUG
+                if (fs.Length != file.Size)
+                {
+
+                }
+                #endif
             }
 
             _finishedFilesCount++;
