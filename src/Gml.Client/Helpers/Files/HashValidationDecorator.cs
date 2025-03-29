@@ -33,7 +33,7 @@ public class HashValidationDecorator : IFileUpdateHandler
 
             if (localFile is null)
             {
-                var localPath = Path.Combine(rootDirectory, serverFile.Directory.TrimStart('\\'));
+                var localPath = Path.Combine(rootDirectory, NormalizePath(serverFile.Directory).TrimStart('\\'));
 
                 if (File.Exists(localPath))
                 {
@@ -67,7 +67,7 @@ public class HashValidationDecorator : IFileUpdateHandler
             {
                 // Размеры совпадают - проверяем хеш
                 using var algorithm = SHA1.Create();
-                var localPath = Path.Combine(rootDirectory, serverFile.Directory.TrimStart('\\'));
+                var localPath = Path.Combine(rootDirectory, NormalizePath(serverFile.Directory).TrimStart('\\'));
                 if (!localPath.StartsWith(Path.Combine(rootDirectory, "assets")) &&
                     SystemHelper.CalculateFileHash(localPath, algorithm) != serverFile.Hash)
                 {
