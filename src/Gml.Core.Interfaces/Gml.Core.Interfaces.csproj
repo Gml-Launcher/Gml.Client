@@ -4,7 +4,7 @@
     <Nullable>enable</Nullable>
     <LangVersion>latest</LangVersion>
     <RootNamespace>GmlCore.Interfaces</RootNamespace>
-    <TargetFrameworks>net8.0;net9.0;netstandard2.1</TargetFrameworks>
+    <TargetFrameworks>net8.0;netstandard2.1</TargetFrameworks>
   </PropertyGroup>
 
   <ItemGroup>
