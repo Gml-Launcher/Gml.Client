@@ -20,7 +20,7 @@ public class HashValidationDecorator : IFileUpdateHandler
         var filesToUpdate = new ConcurrentBag<ProfileFileReadDto>();
         var filesToDelete = new ConcurrentDictionary<string, ProfileFileReadDto>(
             result.FilesToDelete.ToDictionary(
-                f => NormalizePath(f.Directory),
+                f => SystemIoProcedures.NormalizePath(f.Directory),
                 f => f
             )
         );
@@ -29,11 +29,11 @@ public class HashValidationDecorator : IFileUpdateHandler
         await Task.WhenAll(files.Select(async serverFile =>
         {
 
-            filesToDelete.TryGetValue(NormalizePath(serverFile.Directory), out var localFile);
+            filesToDelete.TryGetValue(SystemIoProcedures.NormalizePath(serverFile.Directory), out var localFile);
 
             if (localFile is null)
             {
-                var localPath = Path.Combine(rootDirectory, NormalizePath(serverFile.Directory).TrimStart('\\'));
+                var localPath = Path.Combine(rootDirectory, SystemIoProcedures.NormalizePath(serverFile.Directory));
 
                 if (File.Exists(localPath))
                 {
@@ -67,35 +67,29 @@ public class HashValidationDecorator : IFileUpdateHandler
             {
                 // Размеры совпадают - проверяем хеш
                 using var algorithm = SHA1.Create();
-                var localPath = Path.Combine(rootDirectory, NormalizePath(serverFile.Directory).TrimStart('\\'));
+                var localPath = Path.Combine(rootDirectory, SystemIoProcedures.NormalizePath(serverFile.Directory));
                 if (!localPath.StartsWith(Path.Combine(rootDirectory, "assets")) &&
                     SystemHelper.CalculateFileHash(localPath, algorithm) != serverFile.Hash)
                 {
                     filesToUpdate.Add(serverFile);
-                    filesToDelete.TryRemove(NormalizePath(localFile.Directory), out _);
+                    filesToDelete.TryRemove(SystemIoProcedures.NormalizePath(localFile.Directory), out _);
                 }
                 else
                 {
                     // Файл актуален - исключаем из списка на удаление
-                    filesToDelete.TryRemove(NormalizePath(localFile.Directory), out _);
+                    filesToDelete.TryRemove(SystemIoProcedures.NormalizePath(localFile.Directory), out _);
                 }
             }
             else
             {
                 // Размеры не совпадают - нужно обновить
                 filesToUpdate.Add(serverFile);
-                filesToDelete.TryRemove(NormalizePath(localFile.Directory), out _);
+                filesToDelete.TryRemove(SystemIoProcedures.NormalizePath(localFile.Directory), out _);
             }
         }));
 
         result.FilesToUpdate = filesToUpdate;
         result.FilesToDelete = filesToDelete.Values;
         return result;
-    }
-
-    private string NormalizePath(string path)
-    {
-        return path.Replace('\\', Path.DirectorySeparatorChar)
-            .Replace('/', Path.DirectorySeparatorChar);
     }
 }

@@ -32,6 +32,7 @@ public class BaseFileUpdateHandler : IFileUpdateHandler
             var relativePath = Path.GetRelativePath(rootDirectory, filePath);
             var fileInfo = new FileInfo(filePath);
             // Используем Path.DirectorySeparatorChar для нормализации пути
+
             var directory = Path.Combine(
                 Path.GetDirectoryName(relativePath)?.Replace('\\', Path.DirectorySeparatorChar)
                     .Replace('/', Path.DirectorySeparatorChar)
@@ -41,7 +42,7 @@ public class BaseFileUpdateHandler : IFileUpdateHandler
             localFiles.Add(new ProfileFileReadDto
             {
                 Name = fileInfo.Name,
-                Directory = "\\" + directory,
+                Directory = Path.DirectorySeparatorChar + SystemIoProcedures.NormalizePath(directory),
                 Size = fileInfo.Length,
             });
         }

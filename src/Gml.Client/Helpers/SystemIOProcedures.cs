@@ -195,4 +195,13 @@ public class SystemIoProcedures
 
         return (result.FilesToUpdate.ToArray(), result.FilesToDelete.ToArray());
     }
+
+    public static string NormalizePath(string path)
+    {
+        return path.Replace('\\', Path.DirectorySeparatorChar)
+            .Replace('/', Path.DirectorySeparatorChar)
+            .Replace(Path.DirectorySeparatorChar == '\\' ? '/' : '\\', Path.DirectorySeparatorChar)
+            .TrimStart('\\')
+            .TrimStart('/');
+    }
 }

@@ -17,22 +17,16 @@ public class WhiteListFileDecorator : IFileUpdateHandler
 
         result.FilesToDelete = result.FilesToDelete.Where(file =>
             !profileInfo.WhiteListFiles.Any(w =>
-                NormalizePath(w.Directory).TrimStart('\\').Equals(
-                    NormalizePath(file.Directory).TrimStart('\\'),
+                SystemIoProcedures.NormalizePath(w.Directory).Equals(
+                    SystemIoProcedures.NormalizePath(file.Directory),
                     StringComparison.OrdinalIgnoreCase)));
 
         result.FilesToUpdate = result.FilesToUpdate.Where(file =>
             !profileInfo.WhiteListFiles.Any(w =>
-                NormalizePath(w.Directory).TrimStart('\\').Equals(
-                    NormalizePath(file.Directory).TrimStart('\\'),
+                SystemIoProcedures.NormalizePath(w.Directory).Equals(
+                    SystemIoProcedures.NormalizePath(file.Directory),
                     StringComparison.OrdinalIgnoreCase)));
 
         return result;
-    }
-
-    private string NormalizePath(string path)
-    {
-        return path.Replace('\\', Path.DirectorySeparatorChar)
-            .Replace('/', Path.DirectorySeparatorChar);
     }
 }
