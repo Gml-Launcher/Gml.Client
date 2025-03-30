@@ -68,7 +68,7 @@ public class SystemIoProcedures
         {
             try
             {
-                File.Delete(Path.Combine(rootDirectory, file.Directory.TrimStart('\\')));
+                File.Delete(Path.Combine(rootDirectory, NormalizePath(file.Directory)));
             }
             catch (Exception e)
             {
@@ -202,6 +202,7 @@ public class SystemIoProcedures
             .Replace('/', Path.DirectorySeparatorChar)
             .Replace(Path.DirectorySeparatorChar == '\\' ? '/' : '\\', Path.DirectorySeparatorChar)
             .TrimStart('\\')
+            .TrimStart(Path.DirectorySeparatorChar)
             .TrimStart('/');
     }
 }

@@ -189,7 +189,7 @@ public class ApiProcedures
 
         process.StartInfo = new ProcessStartInfo
         {
-            FileName = profileDto.JavaPath.Replace("{localPath}", installationDirectory),
+            FileName = SystemIoProcedures.NormalizePath(profileDto.JavaPath).Replace("{localPath}", installationDirectory),
             Arguments = profileDto.Arguments,
             WorkingDirectory = profilePath,
             RedirectStandardOutput = true,
@@ -483,12 +483,8 @@ public class ApiProcedures
 
         try
         {
-            if (_osType == OsType.Windows)
-                file.Directory = file.Directory.Replace('/', Path.DirectorySeparatorChar)
-                    .TrimStart(Path.DirectorySeparatorChar);
-
             var localPath = Path.Combine(installationDirectory,
-                file.Directory.TrimStart(Path.DirectorySeparatorChar).TrimStart('\\'));
+                SystemIoProcedures.NormalizePath(file.Directory));
             await EnsureDirectoryExists(localPath);
 
             if (IsOptionalMod(localPath))
