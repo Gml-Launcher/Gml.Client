@@ -8,7 +8,9 @@ using Gml.Web.Api.Domains.System;
 using Gml.Web.Api.Dto.Files;
 using Gml.Web.Api.Dto.Messages;
 using Gml.Web.Api.Dto.Mods;
+using Gml.Web.Api.Dto.News;
 using Gml.Web.Api.Dto.Profile;
+using GmlCore.Interfaces.News;
 using GmlCore.Interfaces.Storage;
 using GmlCore.Interfaces.User;
 using IUser = Gml.Client.Models.IUser;
@@ -73,6 +75,11 @@ public class GmlClientManager : IGmlClientManager
     public Task<ResponseMessage<List<ModsDetailsInfoDto>>> GetOptionalModsInfo(string accessToken)
     {
         return _apiProcedures.GetOptionalModsInfo(accessToken);
+    }
+
+    public Task<ResponseMessage<List<NewsReadDto>>> GetNews()
+    {
+        return _apiProcedures.GetNews();
     }
 
     public Task<ResponseMessage<List<ModReadDto>>> GetOptionalMods(string profileName, string accessToken)
@@ -160,12 +167,10 @@ public class GmlClientManager : IGmlClientManager
     public async Task DownloadNotInstalledFiles(ProfileReadInfoDto profileInfo,
         CancellationToken cancellationToken = default)
     {
-        await _systemProcedures.RemoveFiles(profileInfo);
+        var validateResult = await _systemProcedures.ValidateFilesAsync(profileInfo, InstallationDirectory);
 
-        var updateFiles = _systemProcedures.FindErroneousFiles(profileInfo, InstallationDirectory);
-        await _apiProcedures.DownloadFiles(InstallationDirectory, updateFiles.ToArray(), 60, cancellationToken);
-
-        _ = ValidateFilesBeforeInstall(profileInfo);
+        await _systemProcedures.RemoveFiles(InstallationDirectory, validateResult.ToDelete);
+        await _apiProcedures.DownloadFiles(InstallationDirectory, validateResult.ToUpdate, 60, cancellationToken);
     }
 
     private Task ValidateFilesBeforeInstall(ProfileReadInfoDto profileInfo)

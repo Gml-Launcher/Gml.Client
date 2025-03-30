@@ -11,10 +11,12 @@ using Gml.Web.Api.Dto.Files;
 using Gml.Web.Api.Dto.Integration;
 using Gml.Web.Api.Dto.Messages;
 using Gml.Web.Api.Dto.Mods;
+using Gml.Web.Api.Dto.News;
 using Gml.Web.Api.Dto.Player;
 using Gml.Web.Api.Dto.Profile;
 using Gml.Web.Api.Dto.Texture;
 using Gml.Web.Api.Dto.User;
+using GmlCore.Interfaces.News;
 using GmlCore.Interfaces.Storage;
 using GmlCore.Interfaces.User;
 using Newtonsoft.Json;
@@ -63,24 +65,39 @@ public class ApiProcedures
         Debug.WriteLine("Calling GetProfiles()");
 #endif
         Debug.Write("Load profiles: ");
-        if (!_httpClient.DefaultRequestHeaders.TryGetValues("Authorization", out _))
-            _httpClient.DefaultRequestHeaders.Add("Authorization", $"Bearer {accessToken}");
+        const int maxRetries = 3;
 
-        var response = await _httpClient.GetAsync("/api/v1/profiles").ConfigureAwait(false);
+        for (int retryCount = 0; retryCount < maxRetries; retryCount++)
+        {
+            try
+            {
+                _httpClient.DefaultRequestHeaders.Remove("Authorization");
+                _httpClient.DefaultRequestHeaders.Add("Authorization", $"Bearer {accessToken}");
 
-        Debug.WriteLine(response.IsSuccessStatusCode ? "Success load" : "Failed load");
+                var response = await _httpClient.GetAsync("/api/v1/profiles").ConfigureAwait(false);
 
-        if (!response.IsSuccessStatusCode)
-            return new ResponseMessage<List<ProfileReadDto>>();
+                Debug.WriteLine(response.IsSuccessStatusCode ? "Success load" : "Failed load");
 
-        var content = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
+                if (!response.IsSuccessStatusCode)
+                    return new ResponseMessage<List<ProfileReadDto>>();
+
+                var content = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
 #if DEBUG
-        Debug.WriteLine(response.IsSuccessStatusCode
-            ? $"Profiles loaded successfully: {content}"
-            : "Failed to load profiles.");
+                Debug.WriteLine($"Response content: {content}");
 #endif
-        return JsonConvert.DeserializeObject<ResponseMessage<List<ProfileReadDto>>>(content)
-               ?? new ResponseMessage<List<ProfileReadDto>>();
+                return JsonConvert.DeserializeObject<ResponseMessage<List<ProfileReadDto>>>(content)
+                       ?? new ResponseMessage<List<ProfileReadDto>>();
+            }
+            catch (Exception ex) when (retryCount < maxRetries - 1)
+            {
+#if DEBUG
+                Debug.WriteLine($"Exception on attempt {retryCount + 1}: {ex.Message}");
+                SentrySdk.CaptureException(ex);
+#endif
+            }
+        }
+
+        throw new Exception("Failed to load profiles after maximum retry attempts.");
     }
 
     public async Task<ResponseMessage<ProfileReadInfoDto?>?> GetProfileInfo(ProfileCreateInfoDto profileCreateInfoDto)
@@ -172,7 +189,7 @@ public class ApiProcedures
 
         process.StartInfo = new ProcessStartInfo
         {
-            FileName = profileDto.JavaPath.Replace("{localPath}", installationDirectory),
+            FileName = SystemIoProcedures.NormalizePath(profileDto.JavaPath).Replace("{localPath}", installationDirectory),
             Arguments = profileDto.Arguments,
             WorkingDirectory = profilePath,
             RedirectStandardOutput = true,
@@ -408,8 +425,8 @@ public class ApiProcedures
     private async Task DownloadFileWithRetry(string installationDirectory, ProfileFileReadDto file,
         SemaphoreSlim throttler, CancellationToken cancellationToken = default)
     {
-        // Try to download file up to 3 times
-        for (var attempt = 1; attempt <= 3; attempt++)
+        // Try to download file up to 5 times
+        for (var attempt = 1; attempt <= 5; attempt++)
             try
             {
                 await DownloadFile(installationDirectory, file, throttler, cancellationToken);
@@ -466,12 +483,8 @@ public class ApiProcedures
 
         try
         {
-            if (_osType == OsType.Windows)
-                file.Directory = file.Directory.Replace('/', Path.DirectorySeparatorChar)
-                    .TrimStart(Path.DirectorySeparatorChar);
-
             var localPath = Path.Combine(installationDirectory,
-                file.Directory.TrimStart(Path.DirectorySeparatorChar).TrimStart('\\'));
+                SystemIoProcedures.NormalizePath(file.Directory));
             await EnsureDirectoryExists(localPath);
 
             if (IsOptionalMod(localPath))
@@ -487,6 +500,13 @@ public class ApiProcedures
                 {
                     await stream.CopyToAsync(fs, cancellationToken);
                 }
+
+                #if DEBUG
+                if (fs.Length != file.Size)
+                {
+
+                }
+                #endif
             }
 
             _finishedFilesCount++;
@@ -494,7 +514,7 @@ public class ApiProcedures
             _progressChanged.OnNext(_progress);
             _loadedFilesCount.OnNext(_finishedFilesCount);
 #if DEBUG
-            Debug.WriteLine($"{_finishedFilesCount}/{_progressFilesCount} files downloaded.");
+            Debug.WriteLine($"{_finishedFilesCount}/{_progressFilesCount} files downloaded [{file.Directory}].");
 #endif
         }
         catch (IOException ex)
@@ -736,8 +756,10 @@ public class ApiProcedures
         Debug.WriteLine("Calling GetOptionalMods()");
 #endif
         Debug.Write("Load profiles: ");
-        if (!_httpClient.DefaultRequestHeaders.TryGetValues("Authorization", out _))
-            _httpClient.DefaultRequestHeaders.Add("Authorization", $"Bearer {accessToken}");
+        if (_httpClient.DefaultRequestHeaders.TryGetValues("Authorization", out _))
+            _httpClient.DefaultRequestHeaders.Remove("Authorization");
+
+        _httpClient.DefaultRequestHeaders.Add("Authorization", $"Bearer {accessToken}");
 
         var response = await _httpClient.GetAsync("/api/v1/mods/details").ConfigureAwait(false);
 
@@ -762,8 +784,10 @@ public class ApiProcedures
         Debug.WriteLine("Calling GetOptionalMods()");
 #endif
         Debug.Write("Load profiles: ");
-        if (!_httpClient.DefaultRequestHeaders.TryGetValues("Authorization", out _))
-            _httpClient.DefaultRequestHeaders.Add("Authorization", $"Bearer {accessToken}");
+        if (_httpClient.DefaultRequestHeaders.TryGetValues("Authorization", out _))
+            _httpClient.DefaultRequestHeaders.Remove("Authorization");
+
+        _httpClient.DefaultRequestHeaders.Add("Authorization", $"Bearer {accessToken}");
 
         var response = await _httpClient.GetAsync($"/api/v1/profiles/{profileName}/mods/optionals")
             .ConfigureAwait(false);
@@ -786,5 +810,29 @@ public class ApiProcedures
     public string ToggleOptionalMod(string localPath, bool isEnabled)
     {
         return isEnabled ? localPath.Replace(".disabled", string.Empty) : $"{localPath}.disabled";
+    }
+
+    public async Task<ResponseMessage<List<NewsReadDto>>> GetNews()
+    {
+#if DEBUG
+        Debug.WriteLine("Calling GetNews()");
+#endif
+
+        var response = await _httpClient.GetAsync($"/api/v1/integrations/news/list")
+            .ConfigureAwait(false);
+
+        Debug.WriteLine(response.IsSuccessStatusCode ? "Success load" : "Failed load");
+
+        if (!response.IsSuccessStatusCode)
+            return new ResponseMessage<List<NewsReadDto>>();
+
+        var content = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
+#if DEBUG
+        Debug.WriteLine(response.IsSuccessStatusCode
+            ? $"Mods loaded successfully: {content}"
+            : "Failed to load profiles.");
+#endif
+        return JsonConvert.DeserializeObject<ResponseMessage<List<NewsReadDto>>>(content)
+               ?? new ResponseMessage<List<NewsReadDto>>();
     }
 }

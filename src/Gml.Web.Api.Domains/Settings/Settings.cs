@@ -8,6 +8,8 @@ public class Settings
     public string StorageHost { get; set; }
     public string StorageLogin { get; set; }
     public string StoragePassword { get; set; }
+    public string CurseForgeKey { get; set; }
+    public string VkKey { get; set; }
     public StorageType StorageType { get; set; }
     public TextureProtocol TextureProtocol { get; set; }
     public bool RegistrationIsEnabled { get; set; }

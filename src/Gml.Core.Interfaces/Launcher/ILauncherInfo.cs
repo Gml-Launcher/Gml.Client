@@ -16,9 +16,10 @@ namespace GmlCore.Interfaces.Launcher
         Dictionary<string, IVersionFile?> ActualLauncherVersion { get; set; }
         IGmlSettings Settings { get; }
         IObservable<IStorageSettings> SettingsUpdated { get; }
+        IDictionary<string, string> AccessTokens { get; set; }
 
         void UpdateSettings(StorageType storageType, string storageHost, string storageLogin, string storagePassword,
-            TextureProtocol textureProtocol);
+            TextureProtocol textureProtocol, string curseForgeKey, string vkKey);
         Task<IEnumerable<ILauncherBuild>> GetBuilds();
         Task<ILauncherBuild?> GetBuild(string name);
     }

@@ -27,6 +27,7 @@ namespace GmlCore.Interfaces.Procedures
         Task<IEnumerable<IUser>> GetUsers(int take, int offset, string findName);
         Task<IEnumerable<IUser>> GetUsers(IEnumerable<string> userUuids);
         Task UpdateUser(IUser user);
+        Task RemoveUser(IUser user);
         Task StartSession(IUser user);
         Task EndSession(IUser user);
         Task<Stream> GetSkin(IUser user);

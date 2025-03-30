@@ -1,5 +1,6 @@
 ﻿using System.Collections.Concurrent;
 using System.Security.Cryptography;
+using Gml.Client.Helpers.Files;
 using Gml.Web.Api.Domains.System;
 using Gml.Web.Api.Dto.Files;
 using Gml.Web.Api.Dto.Profile;
@@ -40,8 +41,8 @@ public class SystemIoProcedures
             {
                 if (new FileInfo(localPath).Length >= _oneHundredMB) return;
 
-                var hashIsCorrect = SystemHelper.CalculateFileHash(localPath, new SHA256Managed()) ==
-                                    downloadingFile.Hash;
+                var hashIsCorrect = SystemHelper.CalculateFileHash(localPath, SHA1.Create()) ==
+                                                                              downloadingFile.Hash;
                 if (hashIsCorrect) return;
 
                 if (!whiteListFiles.Any(c => c.Directory.Contains(downloadingFile.Directory)))
@@ -60,6 +61,27 @@ public class SystemIoProcedures
     {
         return File.Exists(path);
     }
+
+    public Task RemoveFiles(string rootDirectory, IEnumerable<ProfileFileReadDto> files)
+    {
+        foreach (var file in files)
+        {
+            try
+            {
+                File.Delete(Path.Combine(rootDirectory, NormalizePath(file.Directory)));
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e);
+                throw;
+            }
+        }
+
+        return Task.CompletedTask;
+    }
+
+    [Obsolete(
+        "Данный метод не рекомендуется к использованию. Используйте ValidateFilesAsync, который  вернет файлы для обновления и удаления")]
 
     public Task RemoveFiles(ProfileReadInfoDto profileInfo)
     {
@@ -115,7 +137,7 @@ public class SystemIoProcedures
                 {
                     return false;
                 }
-                
+
                 if (filesByName.Any(c => c.Size != fileInfo.Length))
                 {
                     return true;
@@ -145,7 +167,7 @@ public class SystemIoProcedures
 
     private static bool HasFileByHash(ProfileFileReadDto profileFile, FileInfo fileInfo)
     {
-        using var hash = new SHA256Managed();
+        using var hash = SHA1.Create();
 
         return profileFile.Hash == SystemHelper.CalculateFileHash(fileInfo.FullName, hash);;
     }
@@ -158,5 +180,29 @@ public class SystemIoProcedures
 
         return Path.Combine(installationDirectory,
             file.Directory.TrimStart('\\').TrimStart(Path.DirectorySeparatorChar));
+    }
+
+    public async Task<(ProfileFileReadDto[] ToUpdate, ProfileFileReadDto[] ToDelete)> ValidateFilesAsync(
+        ProfileReadInfoDto profileInfo,
+        string rootDirectory)
+    {
+        IFileUpdateHandler handler = new BaseFileUpdateHandler();
+        handler = new HashValidationDecorator(handler);
+        handler = new WhiteListFileDecorator(handler);
+        handler = new WhiteListFolderDecorator(handler);
+
+        var result = await handler.ValidateFilesAsync(profileInfo, rootDirectory);
+
+        return (result.FilesToUpdate.ToArray(), result.FilesToDelete.ToArray());
+    }
+
+    public static string NormalizePath(string path)
+    {
+        return path.Replace('\\', Path.DirectorySeparatorChar)
+            .Replace('/', Path.DirectorySeparatorChar)
+            .Replace(Path.DirectorySeparatorChar == '\\' ? '/' : '\\', Path.DirectorySeparatorChar)
+            .TrimStart('\\')
+            .TrimStart(Path.DirectorySeparatorChar)
+            .TrimStart('/');
     }
 }

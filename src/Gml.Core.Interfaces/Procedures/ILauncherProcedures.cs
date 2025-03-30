@@ -14,4 +14,6 @@ public interface ILauncherProcedures
     IObservable<string> BuildLogs { get; }
     bool CanCompile(string version, out string message);
     Task<IEnumerable<string>> GetPlatforms();
+    Task Download(string version, string host, string folderName);
+    Task<IReadOnlyCollection<string>> GetVersions();
 }

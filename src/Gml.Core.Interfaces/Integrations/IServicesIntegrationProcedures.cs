@@ -9,6 +9,7 @@ namespace GmlCore.Interfaces.Integrations
     public interface IServicesIntegrationProcedures
     {
         ITextureProvider TextureProvider { get; set; }
+        INewsListenerProvider NewsProvider { get; set; }
         Task<AuthType> GetAuthType();
         Task<IEnumerable<IAuthServiceInfo>> GetAuthServices();
         Task<IAuthServiceInfo?> GetActiveAuthService();
