@@ -22,10 +22,14 @@ public class WhiteListFolderDecorator : IFileUpdateHandler
                     StringComparison.OrdinalIgnoreCase)));
 
         result.FilesToUpdate = result.FilesToUpdate.Where(file =>
-            !profileInfo.WhiteListFolders.Any(folder =>
-                SystemIoProcedures.NormalizePath(file.Directory).StartsWith(
-                    SystemIoProcedures.NormalizePath(Path.Combine("clients", profileInfo.ProfileName, folder.Path)),
-                    StringComparison.OrdinalIgnoreCase)));
+        {
+            var fullPath = Path.Combine(rootDirectory, SystemIoProcedures.NormalizePath(file.Directory));
+            return !File.Exists(fullPath) ||
+                   !profileInfo.WhiteListFolders.Any(folder =>
+                       SystemIoProcedures.NormalizePath(file.Directory).StartsWith(
+                           SystemIoProcedures.NormalizePath(Path.Combine("clients", profileInfo.ProfileName, folder.Path)),
+                           StringComparison.OrdinalIgnoreCase));
+        });
 
         return result;
     }
