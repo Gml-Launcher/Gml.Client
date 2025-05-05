@@ -520,14 +520,14 @@ public class ApiProcedures
         catch (IOException ex)
         {
 #if DEBUG
-            Debug.WriteLine($"IOException during download: {ex.Message}");
+            Debug.WriteLine($"IOException during download {file.Directory}: {ex.Message}");
 #endif
             throw;
         }
         catch (Exception ex)
         {
 #if DEBUG
-            Debug.WriteLine($"Exception during download: {ex.Message}");
+            Debug.WriteLine($"Exception during download {file.Directory}: {ex.Message}");
 #endif
             Console.WriteLine(ex);
         }

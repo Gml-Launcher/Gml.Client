@@ -1,3 +1,4 @@
+using Gml.Web.Api.Dto.Files;
 using Gml.Web.Api.Dto.Profile;
 
 namespace Gml.Client.Helpers.Files;
@@ -24,13 +25,23 @@ public class WhiteListFolderDecorator : IFileUpdateHandler
         result.FilesToUpdate = result.FilesToUpdate.Where(file =>
         {
             var fullPath = Path.Combine(rootDirectory, SystemIoProcedures.NormalizePath(file.Directory));
-            return !File.Exists(fullPath) ||
-                   !profileInfo.WhiteListFolders.Any(folder =>
-                       SystemIoProcedures.NormalizePath(file.Directory).StartsWith(
-                           SystemIoProcedures.NormalizePath(Path.Combine("clients", profileInfo.ProfileName, folder.Path)),
-                           StringComparison.OrdinalIgnoreCase));
+
+            return FileNotExists(fullPath) || NotExistsInWhiteList(profileInfo, file);
         });
 
         return result;
+    }
+
+    private static bool NotExistsInWhiteList(ProfileReadInfoDto profileInfo, ProfileFileReadDto file)
+    {
+        return !profileInfo.WhiteListFolders.Any(folder =>
+            SystemIoProcedures.NormalizePath(file.Directory).StartsWith(
+                SystemIoProcedures.NormalizePath(Path.Combine("clients", profileInfo.ProfileName, folder.Path)),
+                StringComparison.OrdinalIgnoreCase));
+    }
+
+    private static bool FileNotExists(string fullPath)
+    {
+        return !File.Exists(fullPath);
     }
 }

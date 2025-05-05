@@ -1,3 +1,4 @@
+using Gml.Web.Api.Dto.Files;
 using Gml.Web.Api.Dto.Profile;
 
 namespace Gml.Client.Helpers.Files;
@@ -15,18 +16,24 @@ public class WhiteListFileDecorator : IFileUpdateHandler
     {
         var result = await _handler.ValidateFilesAsync(profileInfo, rootDirectory);
 
-        result.FilesToDelete = result.FilesToDelete.Where(file =>
-            !profileInfo.WhiteListFiles.Any(w =>
-                SystemIoProcedures.NormalizePath(w.Directory).Equals(
-                    SystemIoProcedures.NormalizePath(file.Directory),
-                    StringComparison.OrdinalIgnoreCase)));
-
-        result.FilesToUpdate = result.FilesToUpdate.Where(file =>
-            !profileInfo.WhiteListFiles.Any(w =>
-                SystemIoProcedures.NormalizePath(w.Directory).Equals(
-                    SystemIoProcedures.NormalizePath(file.Directory),
-                    StringComparison.OrdinalIgnoreCase)));
+        result.FilesToDelete = result.FilesToDelete.Where(file => !ExistsInWhiteList(profileInfo, file));
+        result.FilesToUpdate = result.FilesToUpdate.Where(file => !FileExists(file, rootDirectory) || !ExistsInWhiteList(profileInfo, file));
 
         return result;
+    }
+
+    private bool FileExists(ProfileFileReadDto file, string rootDirectory)
+    {
+        var fullName = Path.Combine(rootDirectory, SystemIoProcedures.NormalizePath(file.Directory));
+
+        return File.Exists(fullName);
+    }
+
+    private static bool ExistsInWhiteList(ProfileReadInfoDto profileInfo, ProfileFileReadDto file)
+    {
+        return profileInfo.WhiteListFiles.Any(w =>
+            SystemIoProcedures.NormalizePath(w.Directory).Equals(
+                SystemIoProcedures.NormalizePath(file.Directory),
+                StringComparison.OrdinalIgnoreCase));
     }
 }
