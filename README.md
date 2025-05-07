@@ -1,3 +1,5 @@
+![Frame 39266](https://github.com/user-attachments/assets/d742bc73-6b41-491c-9319-d2c3cd38a602)
+
 # Cloning and Setting Up the Gml.Client Project
 
 This guide will help you clone the `Gml.Client` project from GitHub, set up the development environment, and publish the
