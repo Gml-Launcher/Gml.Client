@@ -196,12 +196,12 @@ public class GmlClientManager : IGmlClientManager
     {
         var user = await _apiProcedures.Auth(login, password, hwid);
 
-        if (user.User?.IsAuth == true)
-        {
-            if (_launchBackendConnection?.DisposeAsync().AsTask() is { } task) await task;
+        if (user.User?.IsAuth != true)
+            return user;
 
-            await OpenServerConnection(user.User);
-        }
+        if (_launchBackendConnection?.DisposeAsync().AsTask() is { } task) await task;
+
+        await OpenServerConnection(user.User);
 
         return user;
     }
@@ -215,12 +215,12 @@ public class GmlClientManager : IGmlClientManager
     {
         var user = await _apiProcedures.Auth(accessToken);
 
-        if (user.User?.IsAuth == true)
-        {
-            if (_launchBackendConnection?.DisposeAsync().AsTask() is { } task) await task;
+        if (user.User?.IsAuth != true)
+            return user;
 
-            await OpenServerConnection(user.User);
-        }
+        if (_launchBackendConnection?.DisposeAsync().AsTask() is { } task) await task;
+
+        await OpenServerConnection(user.User);
 
         return user;
     }
