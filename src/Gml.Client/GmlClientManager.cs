@@ -28,6 +28,7 @@ public class GmlClientManager : IGmlClientManager
     private readonly ISubject<bool> _profilesChanged = new Subject<bool>();
     private readonly ISubject<int> _progressChanged = new Subject<int>();
     private readonly string _webSocketAddress;
+    private readonly string _offlineProfilesDirectory;
 
     private SignalRConnect? _launchBackendConnection;
     private IDisposable? _profilesChangedEvent;
@@ -41,6 +42,7 @@ public class GmlClientManager : IGmlClientManager
 
         _osType = osType;
         _systemProcedures = new SystemIoProcedures(installationDirectory, osType);
+        _offlineProfilesDirectory = Path.Combine(InstallationDirectory, "offline-mode");
         _apiProcedures = new ApiProcedures(new HttpClient
         {
             BaseAddress = hostUri
@@ -67,23 +69,6 @@ public class GmlClientManager : IGmlClientManager
     public string InstallationDirectory { get; private set; }
 
     public bool SkipUpdate { get; set; }
-
-    public async Task<string?> ReadJSONResponse(string savePath, string filename = "response")
-    {
-        string path = Path.Combine(savePath, $"{filename}.json");
-        if (!File.Exists(path))
-        {
-#if DEBUG
-            Debug.WriteLine($"{filename}.json file not found");
-#endif
-            return null;
-        }
-        string content = await File.ReadAllTextAsync(path).ConfigureAwait(false);
-#if DEBUG
-        Debug.WriteLine($"Read content from {filename}.json: {content}");
-#endif
-        return content;
-    }
 
     [Obsolete("Use method with accessToken")]
     public Task<ResponseMessage<List<ProfileReadDto>>> GetProfiles()
@@ -126,14 +111,14 @@ public class GmlClientManager : IGmlClientManager
         return _apiProcedures.GetProfiles(accessToken, Path.Combine(this.InstallationDirectory, "offline-mode"));
     }
 
-    public async Task<ResponseMessage<List<ProfileReadDto>>> GetProfilesOffline()
+    public async Task<ResponseMessage<List<ProfileReadDto>>> GetOfflineProfiles()
     {
 #if DEBUG
         Debug.WriteLine("Calling GetProfilesOffline()");
 #endif
         try
         {
-            string? content = await ReadJSONResponse(Path.Combine(this.InstallationDirectory, "offline-mode"), "profiles");
+            string? content = await _apiProcedures.ReadJsonResponse(_offlineProfilesDirectory, "profiles");
 
             if (content == null) { return new ResponseMessage<List<ProfileReadDto>>(); }
 
@@ -220,7 +205,7 @@ public class GmlClientManager : IGmlClientManager
 #endif
         try
         {
-            string? content = await ReadJSONResponse(Path.Combine(this.InstallationDirectory, "offline-mode", $"{profileDto.ProfileName}"), "profileInfo");
+            string? content = await _apiProcedures.ReadJsonResponse(Path.Combine(_offlineProfilesDirectory, $"{profileDto.ProfileName}"), "profileInfo");
 
             if (content == null) { return new ResponseMessage<ProfileReadInfoDto?>(); }
 

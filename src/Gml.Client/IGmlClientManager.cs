@@ -24,7 +24,7 @@ public interface IGmlClientManager : IDisposable
     Task<ResponseMessage<List<ProfileReadDto>>> GetProfiles();
     Task<ResponseMessage<List<ModsDetailsInfoDto>>> GetOptionalModsInfo(string accessToken);
     Task<ResponseMessage<List<ProfileReadDto>>> GetProfiles(string accessToken);
-    Task<ResponseMessage<List<ProfileReadDto>>> GetProfilesOffline();
+    Task<ResponseMessage<List<ProfileReadDto>>> GetOfflineProfiles();
     Task<ResponseMessage<ProfileReadInfoDto?>?> GetProfileInfo(ProfileCreateInfoDto profileDto);
     Task<ResponseMessage<ProfileReadInfoDto?>?> GetProfileInfoOffline(ProfileCreateInfoDto profileDto);
     public Task<Process> GetProcess(ProfileReadInfoDto profileDto, OsType osType, bool isOffline = false);

@@ -53,7 +53,7 @@ public class ApiProcedures
     public IObservable<int> LoadedFilesCount => _loadedFilesCount;
     internal event EventHandler<string>? FileAdded;
 
-    public async void SaveJSONResponse(string? content, string savePath, string filename = "response")
+    public async void SaveJsonResponse(string? content, string savePath, string filename = "response")
     {
         try
         {
@@ -109,7 +109,7 @@ public class ApiProcedures
 #endif
                 if (savePath != null)
                 {
-                    SaveJSONResponse(content, savePath, "profiles");
+                    SaveJsonResponse(content, savePath, "profiles");
                 }
 
                 return JsonConvert.DeserializeObject<ResponseMessage<List<ProfileReadDto>>>(content)
@@ -168,7 +168,7 @@ public class ApiProcedures
 
         if (savePath != null)
         {
-            SaveJSONResponse(content, savePath, "profileInfo");
+            SaveJsonResponse(content, savePath, "profileInfo");
         }
 
         Debug.Write("Profile loaded");
@@ -898,5 +898,22 @@ public class ApiProcedures
             : "Failed ping");
 #endif
         return (int)response.StatusCode;
+    }
+
+    public async Task<string?> ReadJsonResponse(string directory, string fileName = "response")
+    {
+        string path = Path.Combine(directory, $"{fileName}.json");
+        if (!File.Exists(path))
+        {
+#if DEBUG
+            Debug.WriteLine($"{filename}.json file not found");
+#endif
+            return null;
+        }
+        string content = await File.ReadAllTextAsync(path).ConfigureAwait(false);
+#if DEBUG
+        Debug.WriteLine($"Read content from {filename}.json: {content}");
+#endif
+        return content;
     }
 }
