@@ -53,13 +53,35 @@ public class ApiProcedures
     public IObservable<int> LoadedFilesCount => _loadedFilesCount;
     internal event EventHandler<string>? FileAdded;
 
+    public async void SaveJSONResponse(string? content, string savePath, string filename = "response")
+    {
+        try
+        {
+            if (!Directory.Exists(savePath))
+            {
+                Directory.CreateDirectory(savePath);
+            }
+            await File.WriteAllTextAsync(Path.Combine(savePath, $"{filename}.json"), content).ConfigureAwait(false);
+#if DEBUG
+            Debug.WriteLine($"Successfully wrote response to {Path.Combine(savePath, $"{filename}.json")}");
+#endif
+        }
+        catch (Exception ex)
+        {
+#if DEBUG
+            Debug.WriteLine($"Failed to write to {filename}.json: {ex.Message}");
+#endif
+            SentrySdk.CaptureException(ex);
+        }
+    }
+
     [Obsolete("Use method with accessToken")]
     public Task<ResponseMessage<List<ProfileReadDto>>> GetProfiles()
     {
         return GetProfiles(string.Empty);
     }
 
-    public async Task<ResponseMessage<List<ProfileReadDto>>> GetProfiles(string accessToken)
+    public async Task<ResponseMessage<List<ProfileReadDto>>> GetProfiles(string accessToken, string savePath = null)
     {
 #if DEBUG
         Debug.WriteLine("Calling GetProfiles()");
@@ -85,6 +107,11 @@ public class ApiProcedures
 #if DEBUG
                 Debug.WriteLine($"Response content: {content}");
 #endif
+                if (savePath != null)
+                {
+                    SaveJSONResponse(content, savePath, "profiles");
+                }
+
                 return JsonConvert.DeserializeObject<ResponseMessage<List<ProfileReadDto>>>(content)
                        ?? new ResponseMessage<List<ProfileReadDto>>();
             }
@@ -100,7 +127,7 @@ public class ApiProcedures
         throw new Exception("Failed to load profiles after maximum retry attempts.");
     }
 
-    public async Task<ResponseMessage<ProfileReadInfoDto?>?> GetProfileInfo(ProfileCreateInfoDto profileCreateInfoDto)
+    public async Task<ResponseMessage<ProfileReadInfoDto?>?> GetProfileInfo(ProfileCreateInfoDto profileCreateInfoDto, string savePath = null)
     {
 #if DEBUG
         Debug.WriteLine("Calling GetProfileInfo()");
@@ -139,6 +166,11 @@ public class ApiProcedures
 
         var content = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
 
+        if (savePath != null)
+        {
+            SaveJSONResponse(content, savePath, "profileInfo");
+        }
+
         Debug.Write("Profile loaded");
 
         var dto = JsonConvert.DeserializeObject<ResponseMessage<ProfileReadInfoDto?>>(content);
@@ -148,12 +180,12 @@ public class ApiProcedures
         return dto;
     }
 
-    public Task<Process> GetProcess(ProfileReadInfoDto profileDto, string installationDirectory, OsType osType)
+    public Task<Process> GetProcess(ProfileReadInfoDto profileDto, string installationDirectory, OsType osType, bool isOffline = false)
     {
 #if DEBUG
         Debug.WriteLine("Calling GetProcess()");
 #endif
-        var process = GetStartProcess(profileDto, installationDirectory, osType);
+        var process = GetStartProcess(profileDto, installationDirectory, osType, isOffline);
 #if DEBUG
         Debug.WriteLine("Process created successfully.");
 #endif
@@ -168,7 +200,7 @@ public class ApiProcedures
         return profileDto.Files.Where(c => c.Directory.Contains(@"\mods\") || c.Directory.Contains("/mods/")).ToList();
     }
 
-    private Process GetStartProcess(ProfileReadInfoDto profileDto, string installationDirectory, OsType osType)
+    private Process GetStartProcess(ProfileReadInfoDto profileDto, string installationDirectory, OsType osType, bool isOffline = false)
     {
 #if DEBUG
         Debug.WriteLine("Calling GetStartProcess()");
@@ -176,11 +208,25 @@ public class ApiProcedures
         // var profilePath = installationDirectory + @"\clients\" + profileDto.ProfileName;
         var profilePath = Path.Combine(installationDirectory, "clients", profileDto.ProfileName);
 
-        var parameters = new Dictionary<string, string>
+        Dictionary<string, string> parameters;
+
+        if (!isOffline)
         {
-            { "{localPath}", installationDirectory },
-            { "{authEndpoint}", $"{_httpClient.BaseAddress.AbsoluteUri}api/v1/integrations/authlib/minecraft" }
-        };
+            parameters = new Dictionary<string, string>
+            {
+                { "{localPath}", installationDirectory },
+                { "{authEndpoint}", $"{_httpClient.BaseAddress.AbsoluteUri}api/v1/integrations/authlib/minecraft" }
+            };
+        }
+        else
+        {
+            parameters = new Dictionary<string, string>
+            {
+                { " -javaagent:{localPath}/clients/Forge-1-20-1/libraries/custom/authlib-injector-1.2.5-alpha-1.jar={authEndpoint}", $"" },
+                { "{localPath}", installationDirectory },
+                { "{authEndpoint}", $"{_httpClient.BaseAddress.AbsoluteUri}api/v1/integrations/authlib/minecraft" }
+            };
+        }
 
         foreach (var parameter in parameters)
             profileDto.Arguments = profileDto.Arguments.Replace(parameter.Key, parameter.Value);
@@ -834,5 +880,23 @@ public class ApiProcedures
 #endif
         return JsonConvert.DeserializeObject<ResponseMessage<List<NewsReadDto>>>(content)
                ?? new ResponseMessage<List<NewsReadDto>>();
+    }
+
+    public static async Task<int> CheckBackend(string hostUrl)
+    {
+#if DEBUG
+        Debug.WriteLine("Calling CheckBackend()");
+#endif
+        using var client = new HttpClient();
+        var response = await client.GetAsync($"{hostUrl}/").ConfigureAwait(false);
+
+        Debug.WriteLine(response.IsSuccessStatusCode ? "Success check" : "Failed check");
+
+#if DEBUG
+        Debug.WriteLine(response.IsSuccessStatusCode
+            ? $"Backend pinged successfully {response.StatusCode}"
+            : "Failed ping");
+#endif
+        return (int)response.StatusCode;
     }
 }

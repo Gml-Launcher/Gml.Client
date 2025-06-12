@@ -1,7 +1,3 @@
-using System.ComponentModel;
-using System.Diagnostics;
-using System.Reactive.Subjects;
-using System.Runtime.InteropServices;
 using Gml.Client.Extensions;
 using Gml.Client.Helpers;
 using Gml.Web.Api.Domains.System;
@@ -10,9 +6,15 @@ using Gml.Web.Api.Dto.Messages;
 using Gml.Web.Api.Dto.Mods;
 using Gml.Web.Api.Dto.News;
 using Gml.Web.Api.Dto.Profile;
+using Gml.Web.Api.Dto.Servers;
 using GmlCore.Interfaces.News;
 using GmlCore.Interfaces.Storage;
 using GmlCore.Interfaces.User;
+using Newtonsoft.Json;
+using System.ComponentModel;
+using System.Diagnostics;
+using System.Reactive.Subjects;
+using System.Runtime.InteropServices;
 using IUser = Gml.Client.Models.IUser;
 
 namespace Gml.Client;
@@ -66,6 +68,23 @@ public class GmlClientManager : IGmlClientManager
 
     public bool SkipUpdate { get; set; }
 
+    public async Task<string?> ReadJSONResponse(string savePath, string filename = "response")
+    {
+        string path = Path.Combine(savePath, $"{filename}.json");
+        if (!File.Exists(path))
+        {
+#if DEBUG
+            Debug.WriteLine($"{filename}.json file not found");
+#endif
+            return null;
+        }
+        string content = await File.ReadAllTextAsync(path).ConfigureAwait(false);
+#if DEBUG
+        Debug.WriteLine($"Read content from {filename}.json: {content}");
+#endif
+        return content;
+    }
+
     [Obsolete("Use method with accessToken")]
     public Task<ResponseMessage<List<ProfileReadDto>>> GetProfiles()
     {
@@ -104,7 +123,42 @@ public class GmlClientManager : IGmlClientManager
 
     public Task<ResponseMessage<List<ProfileReadDto>>> GetProfiles(string accessToken)
     {
-        return _apiProcedures.GetProfiles(accessToken);
+        return _apiProcedures.GetProfiles(accessToken, Path.Combine(this.InstallationDirectory, "offline-mode"));
+    }
+
+    public async Task<ResponseMessage<List<ProfileReadDto>>> GetProfilesOffline()
+    {
+#if DEBUG
+        Debug.WriteLine("Calling GetProfilesOffline()");
+#endif
+        try
+        {
+            string? content = await ReadJSONResponse(Path.Combine(this.InstallationDirectory, "offline-mode"), "profiles");
+
+            if (content == null) { return new ResponseMessage<List<ProfileReadDto>>(); }
+
+            var result = JsonConvert.DeserializeObject<ResponseMessage<List<ProfileReadDto>>>(content);
+
+            if (result?.Data != null)
+            {
+                foreach (var profile in result.Data)
+                {
+                    profile.Background = null;
+                    profile.State = GmlCore.Interfaces.Enums.ProfileState.Offline;
+                    profile.Servers = new List<ServerReadDto>();
+                }
+            }
+
+            return result ?? new ResponseMessage<List<ProfileReadDto>>();
+        }
+        catch (Exception ex)
+        {
+#if DEBUG
+            Debug.WriteLine($"Error reading or deserializing json: {ex.Message}");
+            SentrySdk.CaptureException(ex);
+#endif
+            return new ResponseMessage<List<ProfileReadDto>>();
+        }
     }
 
     public Task LoadDiscordRpc()
@@ -156,12 +210,43 @@ public class GmlClientManager : IGmlClientManager
 
     public Task<ResponseMessage<ProfileReadInfoDto?>?> GetProfileInfo(ProfileCreateInfoDto profileDto)
     {
-        return _apiProcedures.GetProfileInfo(profileDto);
+        return _apiProcedures.GetProfileInfo(profileDto, Path.Combine(this.InstallationDirectory, "offline-mode", $"{profileDto.ProfileName}"));
     }
 
-    public Task<Process> GetProcess(ProfileReadInfoDto profileDto, OsType osType)
+    public async Task<ResponseMessage<ProfileReadInfoDto?>?> GetProfileInfoOffline(ProfileCreateInfoDto profileDto)
     {
-        return _apiProcedures.GetProcess(profileDto, InstallationDirectory, osType);
+#if DEBUG
+        Debug.WriteLine("Calling GetProfileInfoOffline()");
+#endif
+        try
+        {
+            string? content = await ReadJSONResponse(Path.Combine(this.InstallationDirectory, "offline-mode", $"{profileDto.ProfileName}"), "profileInfo");
+
+            if (content == null) { return new ResponseMessage<ProfileReadInfoDto?>(); }
+
+            var dto = JsonConvert.DeserializeObject<ResponseMessage<ProfileReadInfoDto?>>(content);
+
+            if (dto?.Data != null)
+            {
+                dto.Data.Background = null;
+                dto.Data.State = GmlCore.Interfaces.Enums.ProfileState.Offline;
+            }
+
+            return dto;
+        }
+        catch (Exception ex)
+        {
+#if DEBUG
+            Debug.WriteLine($"Error reading or deserializing json: {ex.Message}");
+            SentrySdk.CaptureException(ex);
+#endif
+            return new ResponseMessage<ProfileReadInfoDto?>();
+        }
+    }
+
+    public Task<Process> GetProcess(ProfileReadInfoDto profileDto, OsType osType, bool isOffline = false)
+    {
+        return _apiProcedures.GetProcess(profileDto, InstallationDirectory, osType, isOffline);
     }
 
     public async Task DownloadNotInstalledFiles(ProfileReadInfoDto profileInfo,
@@ -270,5 +355,15 @@ public class GmlClientManager : IGmlClientManager
     public static Task<string> GetSentryLink(string hostUrl)
     {
         return ApiProcedures.GetSentryLink(hostUrl);
+    }
+
+    public static async Task<string> GetSentryLinkAsync(string hostUrl)
+    {
+        return await ApiProcedures.GetSentryLink(hostUrl);
+    }
+
+    public static async Task<int> CheckAPI(string hostUrl)
+    {
+        return await ApiProcedures.CheckBackend(hostUrl);
     }
 }

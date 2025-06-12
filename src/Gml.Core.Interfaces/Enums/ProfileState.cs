@@ -9,4 +9,5 @@ public enum ProfileState
     Error = 4,
     NeedCompile = 5,
     Packing = 6,
+    Offline = 7,
 }
