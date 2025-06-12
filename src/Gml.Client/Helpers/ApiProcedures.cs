@@ -222,14 +222,13 @@ public class ApiProcedures
         {
             parameters = new Dictionary<string, string>
             {
-                { " -javaagent:{localPath}/clients/Forge-1-20-1/libraries/custom/authlib-injector-1.2.5-alpha-1.jar={authEndpoint}", $"" },
+                { " -javaagent:{localPath}/clients/1710/libraries/custom/authlib-injector-1.2.5-alpha-1.jar={authEndpoint}", string.Empty },
                 { "{localPath}", installationDirectory },
-                { "{authEndpoint}", $"{_httpClient.BaseAddress.AbsoluteUri}api/v1/integrations/authlib/minecraft" }
             };
         }
 
         foreach (var parameter in parameters)
-            profileDto.Arguments = profileDto.Arguments.Replace(parameter.Key, parameter.Value);
+            profileDto.Arguments = profileDto.Arguments.Replace(parameter.Key, parameter.Value, StringComparison.CurrentCultureIgnoreCase);
 
         var process = new Process();
 
@@ -906,13 +905,13 @@ public class ApiProcedures
         if (!File.Exists(path))
         {
 #if DEBUG
-            Debug.WriteLine($"{filename}.json file not found");
+            Debug.WriteLine($"{fileName}.json file not found");
 #endif
             return null;
         }
         string content = await File.ReadAllTextAsync(path).ConfigureAwait(false);
 #if DEBUG
-        Debug.WriteLine($"Read content from {filename}.json: {content}");
+        Debug.WriteLine($"Read content from {fileName}.json: {content}");
 #endif
         return content;
     }
