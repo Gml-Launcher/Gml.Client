@@ -881,7 +881,7 @@ public class ApiProcedures
                ?? new ResponseMessage<List<NewsReadDto>>();
     }
 
-    public static async Task<int> CheckBackend(string hostUrl)
+    public static async Task<bool> CheckBackend(string hostUrl)
     {
 #if DEBUG
         Debug.WriteLine("Calling CheckBackend()");
@@ -896,7 +896,7 @@ public class ApiProcedures
             ? $"Backend pinged successfully {response.StatusCode}"
             : "Failed ping");
 #endif
-        return (int)response.StatusCode;
+        return response.IsSuccessStatusCode;
     }
 
     public async Task<string?> ReadJsonResponse(string directory, string fileName = "response")
