@@ -443,6 +443,53 @@ public class ApiProcedures
         return (authUser, dto?.Message ?? string.Empty, dto?.Errors ?? []);
     }
 
+    public async Task<(IUser User, string Message, IEnumerable<string> Details)> Auth2Fa(string login, string password,
+        string hwid, string twoFactorCode)
+    {
+#if DEBUG
+        Debug.WriteLine($"Sending 2FA verification request for user: {login} with code: {twoFactorCode}");
+#endif
+        var model = JsonConvert.SerializeObject(new BaseUserPassword
+        {
+            Login = login,
+            Password = password,
+            TwoFactorCode = twoFactorCode,
+            AccessToken = string.Empty
+        });
+
+        var authUser = new AuthUser
+        {
+            Name = login
+        };
+
+        var data = new StringContent(model, Encoding.UTF8, "application/json");
+        _httpClient.DefaultRequestHeaders.Add("X-HWID", hwid);
+        var response = await _httpClient.PostAsync("/api/v1/integrations/auth/signin", data).ConfigureAwait(false);
+        _httpClient.DefaultRequestHeaders.Remove("X-HWID");
+        authUser.IsAuth = response.IsSuccessStatusCode;
+
+        var content = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
+#if DEBUG
+        Debug.WriteLine($"2FA Auth Response: {content}");
+#endif
+
+        var dto = JsonConvert.DeserializeObject<ResponseMessage<PlayerReadDto>>(content);
+
+        if (response.IsSuccessStatusCode && dto?.Data != null)
+        {
+            authUser.Uuid = dto.Data.Uuid;
+            authUser.Name = dto.Data.Name;
+            authUser.AccessToken = dto.Data.AccessToken;
+            authUser.Has2Fa = false;
+            authUser.ExpiredDate = dto.Data.ExpiredDate;
+            authUser.TextureUrl = dto.Data.TextureSkinUrl;
+
+            return (authUser, string.Empty, Enumerable.Empty<string>());
+        }
+
+        return (authUser, dto?.Message ?? string.Empty, dto?.Errors ?? []);
+    }
+
     public async Task DownloadFiles(string installationDirectory, ProfileFileReadDto[] files, int loadFilesPartCount,
         CancellationToken cancellationToken = default)
     {
