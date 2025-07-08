@@ -275,6 +275,19 @@ public class GmlClientManager : IGmlClientManager
 
         return user;
     }
+    public async Task<(IUser User, string Message, IEnumerable<string> Details)> Auth2Fa(string login, string password,
+        string hwid, string twoFactorCode)
+    {
+        var user = await _apiProcedures.Auth2Fa(login, password, hwid, twoFactorCode);
+
+        if (user.User?.IsAuth == true)
+        {
+            if (_launchBackendConnection?.DisposeAsync().AsTask() is { } task) await task;
+            await OpenServerConnection(user.User);
+        }
+
+        return user;
+    }
 
     public Task<IPlayerTexture?> GetTexturesByName(string userName)
     {
