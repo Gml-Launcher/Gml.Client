@@ -31,7 +31,7 @@ public interface IGmlClientManager : IDisposable
     Task DownloadNotInstalledFiles(ProfileReadInfoDto profileInfo, CancellationToken cancellationToken);
     Task<(IUser User, string Message, IEnumerable<string> Details)> Auth(string login, string password, string hwid);
     Task<(IUser User, string Message, IEnumerable<string> Details)> Auth(string accessToken);
-    Task<(IUser User, string Message, IEnumerable<string> Details)> Auth2Fa(string login, string password, string hwid, string twoFactorCode);
+    Task<(IUser User, string Message, IEnumerable<string> Details)> AuthWith2Fa(string login, string password, string hwid, string twoFactorCode);
 
     Task ClearFiles(ProfileReadInfoDto profile);
     Task LoadDiscordRpc();

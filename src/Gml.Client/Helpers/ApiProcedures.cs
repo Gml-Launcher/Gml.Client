@@ -352,60 +352,6 @@ public class ApiProcedures
         return string.Empty;
     }
 
-    public async Task<(IUser User, string Message, IEnumerable<string> Details)> Auth(string login, string password,
-        string hwid)
-    {
-#if DEBUG
-        Debug.WriteLine("Calling Auth(string login, string password, string hwid)");
-#endif
-        var model = JsonConvert.SerializeObject(new BaseUserPassword
-        {
-            Login = login,
-            Password = password
-        });
-
-        var authUser = new AuthUser
-        {
-            Name = login
-        };
-
-        var data = new StringContent(model, Encoding.UTF8, "application/json");
-        _httpClient.DefaultRequestHeaders.Add("X-HWID", hwid);
-        var response = await _httpClient.PostAsync("/api/v1/integrations/auth/signin", data).ConfigureAwait(false);
-        _httpClient.DefaultRequestHeaders.Remove("X-HWID");
-        authUser.IsAuth = response.IsSuccessStatusCode;
-
-        var content = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
-
-        var dto = JsonConvert.DeserializeObject<ResponseMessage<PlayerReadDto>>(content);
-
-        if (response.IsSuccessStatusCode && dto != null)
-        {
-            authUser.Uuid = dto.Data!.Uuid;
-            authUser.Name = dto.Data.Name;
-            authUser.AccessToken = dto.Data!.AccessToken;
-            authUser.Has2Fa = false;
-            authUser.ExpiredDate = dto.Data!.ExpiredDate;
-            authUser.TextureUrl =
-                $"{_httpClient.BaseAddress.AbsoluteUri}api/v1/integrations/texture/skins/{dto.Data.TextureSkinGuid}";
-
-#if DEBUG
-            Debug.WriteLine("Authentication success.");
-#endif
-            return (authUser, string.Empty, []);
-        }
-
-        if(dto is not null && dto.Message.Contains("2FA"))
-        {
-            authUser.Has2Fa = true;
-        }
-
-#if DEBUG
-        Debug.WriteLine("Authentication failed.");
-#endif
-        return (authUser, dto?.Message ?? string.Empty, dto?.Errors ?? []);
-    }
-
     public async Task<(IUser User, string Message, IEnumerable<string> Details)> Auth(string accessToken)
     {
 #if DEBUG
@@ -442,13 +388,18 @@ public class ApiProcedures
             return (authUser, string.Empty, Enumerable.Empty<string>());
         }
 
+        if(dto is not null && dto.Message.Contains("2FA"))
+        {
+            authUser.Has2Fa = true;
+        }
+
 #if DEBUG
         Debug.WriteLine("Authentication (token) failed.");
 #endif
         return (authUser, dto?.Message ?? string.Empty, dto?.Errors ?? []);
     }
 
-    public async Task<(IUser User, string Message, IEnumerable<string> Details)> Auth2Fa(string login, string password,
+    public async Task<(IUser User, string Message, IEnumerable<string> Details)> AuthWith2Fa(string login, string password,
         string hwid, string twoFactorCode)
     {
 #if DEBUG
@@ -489,7 +440,12 @@ public class ApiProcedures
             authUser.ExpiredDate = dto.Data.ExpiredDate;
             authUser.TextureUrl = dto.Data.TextureSkinUrl;
 
-            return (authUser, string.Empty, Enumerable.Empty<string>());
+            return (authUser, string.Empty, []);
+        }
+
+        if(dto is not null && dto.Message.Contains("2FA"))
+        {
+            authUser.Has2Fa = true;
         }
 
         return (authUser, dto?.Message ?? string.Empty, dto?.Errors ?? []);
