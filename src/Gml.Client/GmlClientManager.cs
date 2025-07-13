@@ -261,17 +261,22 @@ public class GmlClientManager : IGmlClientManager
         await _apiProcedures.DownloadFiles(InstallationDirectory, profileInfo.ToArray(), 60, cancellationToken);
     }
 
-    public async Task<(IUser User, string Message, IEnumerable<string> Details)> Auth(string login, string password,
+    public Task<(IUser User, string Message, IEnumerable<string> Details)> Auth(string login, string password,
         string hwid)
     {
-        var user = await _apiProcedures.Auth(login, password, hwid);
+        return AuthWith2Fa(login, password, hwid, string.Empty);
+    }
 
-        if (user.User?.IsAuth != true)
-            return user;
+    public async Task<(IUser User, string Message, IEnumerable<string> Details)> AuthWith2Fa(string login, string password,
+        string hwid, string twoFactorCode)
+    {
+        var user = await _apiProcedures.AuthWith2Fa(login, password, hwid, twoFactorCode);
 
-        if (_launchBackendConnection?.DisposeAsync().AsTask() is { } task) await task;
-
-        await OpenServerConnection(user.User);
+        if (user.User?.IsAuth == true)
+        {
+            if (_launchBackendConnection?.DisposeAsync().AsTask() is { } task) await task;
+            await OpenServerConnection(user.User);
+        }
 
         return user;
     }
