@@ -392,7 +392,12 @@ public class ApiProcedures
 #if DEBUG
             Debug.WriteLine("Authentication success.");
 #endif
-            return (authUser, string.Empty, Enumerable.Empty<string>());
+            return (authUser, string.Empty, []);
+        }
+
+        if(dto is not null && dto.Message.Contains("2FA"))
+        {
+            authUser.Has2Fa = true;
         }
 
 #if DEBUG
