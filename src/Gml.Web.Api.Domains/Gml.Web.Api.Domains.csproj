@@ -6,6 +6,10 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\Gml.Core.Interfaces\Gml.Core.Interfaces.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
     <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
   </ItemGroup>
 
@@ -16,10 +20,6 @@
     <Compile Update="Integrations\UnicoreAuthResult.cs">
       <DependentUpon>AuthResult.cs</DependentUpon>
     </Compile>
-  </ItemGroup>
-
-  <ItemGroup>
-    <ProjectReference Include="..\Gml.Core.Interfaces\Gml.Core.Interfaces.csproj" />
   </ItemGroup>
 
 </Project>
