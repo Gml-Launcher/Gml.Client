@@ -108,7 +108,7 @@ public class GmlClientManager : IGmlClientManager
 
     public Task<ResponseMessage<List<ProfileReadDto>>> GetProfiles(string accessToken)
     {
-        return _apiProcedures.GetProfiles(accessToken, Path.Combine(this.InstallationDirectory, "offline-mode"));
+        return _apiProcedures.GetProfiles(accessToken, _offlineProfilesDirectory);
     }
 
     public async Task<ResponseMessage<List<ProfileReadDto>>> GetOfflineProfiles()
@@ -195,7 +195,7 @@ public class GmlClientManager : IGmlClientManager
 
     public Task<ResponseMessage<ProfileReadInfoDto?>?> GetProfileInfo(ProfileCreateInfoDto profileDto)
     {
-        return _apiProcedures.GetProfileInfo(profileDto, Path.Combine(this.InstallationDirectory, "offline-mode", $"{profileDto.ProfileName}"));
+        return _apiProcedures.GetProfileInfo(profileDto, Path.Combine(_offlineProfilesDirectory, $"{profileDto.ProfileName}"));
     }
 
     public async Task<ResponseMessage<ProfileReadInfoDto?>?> GetProfileInfoOffline(ProfileCreateInfoDto profileDto)
