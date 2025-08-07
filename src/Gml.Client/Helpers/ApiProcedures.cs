@@ -215,6 +215,7 @@ public class ApiProcedures
             parameters = new Dictionary<string, string>
             {
                 { "{localPath}", installationDirectory },
+                // { "{authEndpoint}", $"{_httpClient.BaseAddress.AbsoluteUri}api/v1/integrations/authlib/minecraft -agentlib:C:\\Users\\a.a.terentiev\\AppData\\Local\\Temp\\Guard_14ed20f28cc14ca2866d27998fcdb81b\\x64\\GuardDLL.dll" }
                 { "{authEndpoint}", $"{_httpClient.BaseAddress.AbsoluteUri}api/v1/integrations/authlib/minecraft" }
             };
         }
@@ -895,7 +896,12 @@ public class ApiProcedures
         Debug.WriteLine("Calling CheckBackend()");
 #endif
         using var client = new HttpClient();
-        var response = await client.GetAsync($"{hostUrl}/").ConfigureAwait(false);
+        var response = await client.GetAsync($"{hostUrl}/health").ConfigureAwait(false);
+
+        if (!response!.IsSuccessStatusCode)
+        {
+            response = await client.GetAsync($"{hostUrl}").ConfigureAwait(false);
+        }
 
         Debug.WriteLine(response.IsSuccessStatusCode ? "Success check" : "Failed check");
 
