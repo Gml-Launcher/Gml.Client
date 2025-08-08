@@ -557,7 +557,7 @@ public class ApiProcedures
                 #if DEBUG
                 if (fs.Length != file.Size)
                 {
-
+                    SentrySdk.CaptureException(new Exception($"Файл не был полностью загружен: {file.Directory}"));
                 }
                 #endif
             }
@@ -895,7 +895,12 @@ public class ApiProcedures
         Debug.WriteLine("Calling CheckBackend()");
 #endif
         using var client = new HttpClient();
-        var response = await client.GetAsync($"{hostUrl}/").ConfigureAwait(false);
+        var response = await client.GetAsync($"{hostUrl}").ConfigureAwait(false);
+
+        if (!response.IsSuccessStatusCode)
+        {
+            response = await client.GetAsync($"{hostUrl}/health").ConfigureAwait(false);
+        }
 
         Debug.WriteLine(response.IsSuccessStatusCode ? "Success check" : "Failed check");
 
