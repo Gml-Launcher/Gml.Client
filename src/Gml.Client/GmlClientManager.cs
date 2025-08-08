@@ -352,8 +352,8 @@ public class GmlClientManager : IGmlClientManager
         return await ApiProcedures.GetSentryLink(hostUrl);
     }
 
-    public static async Task<bool> CheckAPI(string hostUrl)
+    public static Task<bool> CheckApiAsync(string hostUrl)
     {
-        return await ApiProcedures.CheckBackend(hostUrl);
+        return ApiProcedures.CheckBackend(hostUrl);
     }
 }
