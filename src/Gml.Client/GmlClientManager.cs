@@ -1,7 +1,3 @@
-using System.ComponentModel;
-using System.Diagnostics;
-using System.Reactive.Subjects;
-using System.Runtime.InteropServices;
 using Gml.Client.Extensions;
 using Gml.Client.Helpers;
 using Gml.Web.Api.Domains.System;
@@ -10,9 +6,15 @@ using Gml.Web.Api.Dto.Messages;
 using Gml.Web.Api.Dto.Mods;
 using Gml.Web.Api.Dto.News;
 using Gml.Web.Api.Dto.Profile;
+using Gml.Web.Api.Dto.Servers;
 using GmlCore.Interfaces.News;
 using GmlCore.Interfaces.Storage;
 using GmlCore.Interfaces.User;
+using Newtonsoft.Json;
+using System.ComponentModel;
+using System.Diagnostics;
+using System.Reactive.Subjects;
+using System.Runtime.InteropServices;
 using IUser = Gml.Client.Models.IUser;
 
 namespace Gml.Client;
@@ -26,6 +28,7 @@ public class GmlClientManager : IGmlClientManager
     private readonly ISubject<bool> _profilesChanged = new Subject<bool>();
     private readonly ISubject<int> _progressChanged = new Subject<int>();
     private readonly string _webSocketAddress;
+    private readonly string _offlineProfilesDirectory;
 
     private SignalRConnect? _launchBackendConnection;
     private IDisposable? _profilesChangedEvent;
@@ -39,6 +42,7 @@ public class GmlClientManager : IGmlClientManager
 
         _osType = osType;
         _systemProcedures = new SystemIoProcedures(installationDirectory, osType);
+        _offlineProfilesDirectory = Path.Combine(InstallationDirectory, "offline-mode");
         _apiProcedures = new ApiProcedures(new HttpClient
         {
             BaseAddress = hostUri
@@ -104,7 +108,42 @@ public class GmlClientManager : IGmlClientManager
 
     public Task<ResponseMessage<List<ProfileReadDto>>> GetProfiles(string accessToken)
     {
-        return _apiProcedures.GetProfiles(accessToken);
+        return _apiProcedures.GetProfiles(accessToken, _offlineProfilesDirectory);
+    }
+
+    public async Task<ResponseMessage<List<ProfileReadDto>>> GetOfflineProfiles()
+    {
+#if DEBUG
+        Debug.WriteLine("Calling GetProfilesOffline()");
+#endif
+        try
+        {
+            string? content = await _apiProcedures.ReadJsonResponse(_offlineProfilesDirectory, "profiles");
+
+            if (content == null) { return new ResponseMessage<List<ProfileReadDto>>(); }
+
+            var result = JsonConvert.DeserializeObject<ResponseMessage<List<ProfileReadDto>>>(content);
+
+            if (result?.Data != null)
+            {
+                foreach (var profile in result.Data)
+                {
+                    profile.Background = null;
+                    profile.State = GmlCore.Interfaces.Enums.ProfileState.Offline;
+                    profile.Servers = new List<ServerReadDto>();
+                }
+            }
+
+            return result ?? new ResponseMessage<List<ProfileReadDto>>();
+        }
+        catch (Exception ex)
+        {
+#if DEBUG
+            Debug.WriteLine($"Error reading or deserializing json: {ex.Message}");
+            SentrySdk.CaptureException(ex);
+#endif
+            return new ResponseMessage<List<ProfileReadDto>>();
+        }
     }
 
     public Task LoadDiscordRpc()
@@ -156,12 +195,43 @@ public class GmlClientManager : IGmlClientManager
 
     public Task<ResponseMessage<ProfileReadInfoDto?>?> GetProfileInfo(ProfileCreateInfoDto profileDto)
     {
-        return _apiProcedures.GetProfileInfo(profileDto);
+        return _apiProcedures.GetProfileInfo(profileDto, Path.Combine(_offlineProfilesDirectory, $"{profileDto.ProfileName}"));
     }
 
-    public Task<Process> GetProcess(ProfileReadInfoDto profileDto, OsType osType)
+    public async Task<ResponseMessage<ProfileReadInfoDto?>?> GetProfileInfoOffline(ProfileCreateInfoDto profileDto)
     {
-        return _apiProcedures.GetProcess(profileDto, InstallationDirectory, osType);
+#if DEBUG
+        Debug.WriteLine("Calling GetProfileInfoOffline()");
+#endif
+        try
+        {
+            string? content = await _apiProcedures.ReadJsonResponse(Path.Combine(_offlineProfilesDirectory, $"{profileDto.ProfileName}"), "profileInfo");
+
+            if (content == null) { return new ResponseMessage<ProfileReadInfoDto?>(); }
+
+            var dto = JsonConvert.DeserializeObject<ResponseMessage<ProfileReadInfoDto?>>(content);
+
+            if (dto?.Data != null)
+            {
+                dto.Data.Background = null;
+                dto.Data.State = GmlCore.Interfaces.Enums.ProfileState.Offline;
+            }
+
+            return dto;
+        }
+        catch (Exception ex)
+        {
+#if DEBUG
+            Debug.WriteLine($"Error reading or deserializing json: {ex.Message}");
+            SentrySdk.CaptureException(ex);
+#endif
+            return new ResponseMessage<ProfileReadInfoDto?>();
+        }
+    }
+
+    public Task<Process> GetProcess(ProfileReadInfoDto profileDto, OsType osType, bool isOffline = false)
+    {
+        return _apiProcedures.GetProcess(profileDto, InstallationDirectory, osType, isOffline);
     }
 
     public async Task DownloadNotInstalledFiles(ProfileReadInfoDto profileInfo,
@@ -191,17 +261,22 @@ public class GmlClientManager : IGmlClientManager
         await _apiProcedures.DownloadFiles(InstallationDirectory, profileInfo.ToArray(), 60, cancellationToken);
     }
 
-    public async Task<(IUser User, string Message, IEnumerable<string> Details)> Auth(string login, string password,
+    public Task<(IUser User, string Message, IEnumerable<string> Details)> Auth(string login, string password,
         string hwid)
     {
-        var user = await _apiProcedures.Auth(login, password, hwid);
+        return AuthWith2Fa(login, password, hwid, string.Empty);
+    }
 
-        if (user.User?.IsAuth != true)
-            return user;
+    public async Task<(IUser User, string Message, IEnumerable<string> Details)> AuthWith2Fa(string login, string password,
+        string hwid, string twoFactorCode)
+    {
+        var user = await _apiProcedures.AuthWith2Fa(login, password, hwid, twoFactorCode);
 
-        if (_launchBackendConnection?.DisposeAsync().AsTask() is { } task) await task;
-
-        await OpenServerConnection(user.User);
+        if (user.User?.IsAuth == true)
+        {
+            if (_launchBackendConnection?.DisposeAsync().AsTask() is { } task) await task;
+            await OpenServerConnection(user.User);
+        }
 
         return user;
     }
@@ -270,5 +345,15 @@ public class GmlClientManager : IGmlClientManager
     public static Task<string> GetSentryLink(string hostUrl)
     {
         return ApiProcedures.GetSentryLink(hostUrl);
+    }
+
+    public static async Task<string> GetSentryLinkAsync(string hostUrl)
+    {
+        return await ApiProcedures.GetSentryLink(hostUrl);
+    }
+
+    public static Task<bool> CheckApiAsync(string hostUrl)
+    {
+        return ApiProcedures.CheckBackend(hostUrl);
     }
 }

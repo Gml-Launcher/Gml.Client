@@ -24,11 +24,15 @@ public interface IGmlClientManager : IDisposable
     Task<ResponseMessage<List<ProfileReadDto>>> GetProfiles();
     Task<ResponseMessage<List<ModsDetailsInfoDto>>> GetOptionalModsInfo(string accessToken);
     Task<ResponseMessage<List<ProfileReadDto>>> GetProfiles(string accessToken);
+    Task<ResponseMessage<List<ProfileReadDto>>> GetOfflineProfiles();
     Task<ResponseMessage<ProfileReadInfoDto?>?> GetProfileInfo(ProfileCreateInfoDto profileDto);
-    public Task<Process> GetProcess(ProfileReadInfoDto profileDto, OsType osType);
+    Task<ResponseMessage<ProfileReadInfoDto?>?> GetProfileInfoOffline(ProfileCreateInfoDto profileDto);
+    public Task<Process> GetProcess(ProfileReadInfoDto profileDto, OsType osType, bool isOffline = false);
     Task DownloadNotInstalledFiles(ProfileReadInfoDto profileInfo, CancellationToken cancellationToken);
     Task<(IUser User, string Message, IEnumerable<string> Details)> Auth(string login, string password, string hwid);
     Task<(IUser User, string Message, IEnumerable<string> Details)> Auth(string accessToken);
+    Task<(IUser User, string Message, IEnumerable<string> Details)> AuthWith2Fa(string login, string password, string hwid, string twoFactorCode);
+
     Task ClearFiles(ProfileReadInfoDto profile);
     Task LoadDiscordRpc();
     Task UpdateDiscordRpcState(string state);

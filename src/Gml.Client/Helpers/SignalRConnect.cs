@@ -64,7 +64,7 @@ public class SignalRConnect : IDisposable, IAsyncDisposable
         {
             await Console.Error.WriteLineAsync($"[Gml.Protect] Connection closed: {error}");
         };
-
+https://gmlf.nazzy.team/
         _hubConnection.On("RequestLauncherHash",
             async () => { await _hubConnection.SendAsync("ConfirmLauncherHash", "hash"); });
 

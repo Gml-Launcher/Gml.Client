@@ -53,13 +53,35 @@ public class ApiProcedures
     public IObservable<int> LoadedFilesCount => _loadedFilesCount;
     internal event EventHandler<string>? FileAdded;
 
+    public async void SaveJsonResponse(string? content, string savePath, string filename = "response")
+    {
+        try
+        {
+            if (!Directory.Exists(savePath))
+            {
+                Directory.CreateDirectory(savePath);
+            }
+            await File.WriteAllTextAsync(Path.Combine(savePath, $"{filename}.json"), content).ConfigureAwait(false);
+#if DEBUG
+            Debug.WriteLine($"Successfully wrote response to {Path.Combine(savePath, $"{filename}.json")}");
+#endif
+        }
+        catch (Exception ex)
+        {
+#if DEBUG
+            Debug.WriteLine($"Failed to write to {filename}.json: {ex.Message}");
+#endif
+            SentrySdk.CaptureException(ex);
+        }
+    }
+
     [Obsolete("Use method with accessToken")]
     public Task<ResponseMessage<List<ProfileReadDto>>> GetProfiles()
     {
         return GetProfiles(string.Empty);
     }
 
-    public async Task<ResponseMessage<List<ProfileReadDto>>> GetProfiles(string accessToken)
+    public async Task<ResponseMessage<List<ProfileReadDto>>> GetProfiles(string accessToken, string savePath = null)
     {
 #if DEBUG
         Debug.WriteLine("Calling GetProfiles()");
@@ -85,6 +107,11 @@ public class ApiProcedures
 #if DEBUG
                 Debug.WriteLine($"Response content: {content}");
 #endif
+                if (savePath != null)
+                {
+                    SaveJsonResponse(content, savePath, "profiles");
+                }
+
                 return JsonConvert.DeserializeObject<ResponseMessage<List<ProfileReadDto>>>(content)
                        ?? new ResponseMessage<List<ProfileReadDto>>();
             }
@@ -100,7 +127,7 @@ public class ApiProcedures
         throw new Exception("Failed to load profiles after maximum retry attempts.");
     }
 
-    public async Task<ResponseMessage<ProfileReadInfoDto?>?> GetProfileInfo(ProfileCreateInfoDto profileCreateInfoDto)
+    public async Task<ResponseMessage<ProfileReadInfoDto?>?> GetProfileInfo(ProfileCreateInfoDto profileCreateInfoDto, string savePath = null)
     {
 #if DEBUG
         Debug.WriteLine("Calling GetProfileInfo()");
@@ -139,6 +166,11 @@ public class ApiProcedures
 
         var content = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
 
+        if (savePath != null)
+        {
+            SaveJsonResponse(content, savePath, "profileInfo");
+        }
+
         Debug.Write("Profile loaded");
 
         var dto = JsonConvert.DeserializeObject<ResponseMessage<ProfileReadInfoDto?>>(content);
@@ -148,12 +180,12 @@ public class ApiProcedures
         return dto;
     }
 
-    public Task<Process> GetProcess(ProfileReadInfoDto profileDto, string installationDirectory, OsType osType)
+    public Task<Process> GetProcess(ProfileReadInfoDto profileDto, string installationDirectory, OsType osType, bool isOffline = false)
     {
 #if DEBUG
         Debug.WriteLine("Calling GetProcess()");
 #endif
-        var process = GetStartProcess(profileDto, installationDirectory, osType);
+        var process = GetStartProcess(profileDto, installationDirectory, osType, isOffline);
 #if DEBUG
         Debug.WriteLine("Process created successfully.");
 #endif
@@ -168,7 +200,7 @@ public class ApiProcedures
         return profileDto.Files.Where(c => c.Directory.Contains(@"\mods\") || c.Directory.Contains("/mods/")).ToList();
     }
 
-    private Process GetStartProcess(ProfileReadInfoDto profileDto, string installationDirectory, OsType osType)
+    private Process GetStartProcess(ProfileReadInfoDto profileDto, string installationDirectory, OsType osType, bool isOffline = false)
     {
 #if DEBUG
         Debug.WriteLine("Calling GetStartProcess()");
@@ -176,14 +208,27 @@ public class ApiProcedures
         // var profilePath = installationDirectory + @"\clients\" + profileDto.ProfileName;
         var profilePath = Path.Combine(installationDirectory, "clients", profileDto.ProfileName);
 
-        var parameters = new Dictionary<string, string>
+        Dictionary<string, string> parameters;
+
+        if (!isOffline)
         {
-            { "{localPath}", installationDirectory },
-            { "{authEndpoint}", $"{_httpClient.BaseAddress.AbsoluteUri}api/v1/integrations/authlib/minecraft" }
-        };
+            parameters = new Dictionary<string, string>
+            {
+                { "{localPath}", installationDirectory },
+                { "{authEndpoint}", $"{_httpClient.BaseAddress.AbsoluteUri}api/v1/integrations/authlib/minecraft" }
+            };
+        }
+        else
+        {
+            parameters = new Dictionary<string, string>
+            {
+                { " -javaagent:{localPath}/clients/1710/libraries/custom/authlib-injector-1.2.5-alpha-1.jar={authEndpoint}", string.Empty },
+                { "{localPath}", installationDirectory },
+            };
+        }
 
         foreach (var parameter in parameters)
-            profileDto.Arguments = profileDto.Arguments.Replace(parameter.Key, parameter.Value);
+            profileDto.Arguments = profileDto.Arguments.Replace(parameter.Key, parameter.Value, StringComparison.CurrentCultureIgnoreCase);
 
         var process = new Process();
 
@@ -307,55 +352,6 @@ public class ApiProcedures
         return string.Empty;
     }
 
-    public async Task<(IUser User, string Message, IEnumerable<string> Details)> Auth(string login, string password,
-        string hwid)
-    {
-#if DEBUG
-        Debug.WriteLine("Calling Auth(string login, string password, string hwid)");
-#endif
-        var model = JsonConvert.SerializeObject(new BaseUserPassword
-        {
-            Login = login,
-            Password = password
-        });
-
-        var authUser = new AuthUser
-        {
-            Name = login
-        };
-
-        var data = new StringContent(model, Encoding.UTF8, "application/json");
-        _httpClient.DefaultRequestHeaders.Add("X-HWID", hwid);
-        var response = await _httpClient.PostAsync("/api/v1/integrations/auth/signin", data).ConfigureAwait(false);
-        _httpClient.DefaultRequestHeaders.Remove("X-HWID");
-        authUser.IsAuth = response.IsSuccessStatusCode;
-
-        var content = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
-
-        var dto = JsonConvert.DeserializeObject<ResponseMessage<PlayerReadDto>>(content);
-
-        if (response.IsSuccessStatusCode && dto != null)
-        {
-            authUser.Uuid = dto.Data!.Uuid;
-            authUser.Name = dto.Data.Name;
-            authUser.AccessToken = dto.Data!.AccessToken;
-            authUser.Has2Fa = false;
-            authUser.ExpiredDate = dto.Data!.ExpiredDate;
-            authUser.TextureUrl =
-                $"{_httpClient.BaseAddress.AbsoluteUri}api/v1/integrations/texture/skins/{dto.Data.TextureSkinGuid}";
-
-#if DEBUG
-            Debug.WriteLine("Authentication success.");
-#endif
-            return (authUser, string.Empty, Enumerable.Empty<string>());
-        }
-
-#if DEBUG
-        Debug.WriteLine("Authentication failed.");
-#endif
-        return (authUser, dto?.Message ?? string.Empty, dto?.Errors ?? []);
-    }
-
     public async Task<(IUser User, string Message, IEnumerable<string> Details)> Auth(string accessToken)
     {
 #if DEBUG
@@ -392,9 +388,66 @@ public class ApiProcedures
             return (authUser, string.Empty, Enumerable.Empty<string>());
         }
 
+        if(dto is not null && dto.Message.Contains("2FA"))
+        {
+            authUser.Has2Fa = true;
+        }
+
 #if DEBUG
         Debug.WriteLine("Authentication (token) failed.");
 #endif
+        return (authUser, dto?.Message ?? string.Empty, dto?.Errors ?? []);
+    }
+
+    public async Task<(IUser User, string Message, IEnumerable<string> Details)> AuthWith2Fa(string login, string password,
+        string hwid, string twoFactorCode)
+    {
+#if DEBUG
+        Debug.WriteLine($"Sending 2FA verification request for user: {login} with code: {twoFactorCode}");
+#endif
+        var model = JsonConvert.SerializeObject(new BaseUserPassword
+        {
+            Login = login,
+            Password = password,
+            TwoFactorCode = twoFactorCode,
+            AccessToken = string.Empty
+        });
+
+        var authUser = new AuthUser
+        {
+            Name = login
+        };
+
+        var data = new StringContent(model, Encoding.UTF8, "application/json");
+        _httpClient.DefaultRequestHeaders.Add("X-HWID", hwid);
+        var response = await _httpClient.PostAsync("/api/v1/integrations/auth/signin", data).ConfigureAwait(false);
+        _httpClient.DefaultRequestHeaders.Remove("X-HWID");
+        authUser.IsAuth = response.IsSuccessStatusCode;
+
+        var content = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
+#if DEBUG
+        Debug.WriteLine($"2FA Auth Response: {content}");
+#endif
+
+        var dto = JsonConvert.DeserializeObject<ResponseMessage<PlayerReadDto>>(content);
+
+        if (response.IsSuccessStatusCode && dto?.Data != null)
+        {
+            authUser.Uuid = dto.Data.Uuid;
+            authUser.Name = dto.Data.Name;
+            authUser.AccessToken = dto.Data.AccessToken;
+            authUser.Has2Fa = false;
+            authUser.ExpiredDate = dto.Data.ExpiredDate;
+            authUser.TextureUrl = dto.Data.TextureSkinUrl;
+
+            return (authUser, string.Empty, []);
+        }
+
+        if(dto is not null && dto.Message.Contains("2FA"))
+        {
+            authUser.Has2Fa = true;
+        }
+
         return (authUser, dto?.Message ?? string.Empty, dto?.Errors ?? []);
     }
 
@@ -504,7 +557,7 @@ public class ApiProcedures
                 #if DEBUG
                 if (fs.Length != file.Size)
                 {
-
+                    SentrySdk.CaptureException(new Exception($"Файл не был полностью загружен: {file.Directory}"));
                 }
                 #endif
             }
@@ -834,5 +887,45 @@ public class ApiProcedures
 #endif
         return JsonConvert.DeserializeObject<ResponseMessage<List<NewsReadDto>>>(content)
                ?? new ResponseMessage<List<NewsReadDto>>();
+    }
+
+    public static async Task<bool> CheckBackend(string hostUrl)
+    {
+#if DEBUG
+        Debug.WriteLine("Calling CheckBackend()");
+#endif
+        using var client = new HttpClient();
+        var response = await client.GetAsync($"{hostUrl}").ConfigureAwait(false);
+
+        if (!response.IsSuccessStatusCode)
+        {
+            response = await client.GetAsync($"{hostUrl}/health").ConfigureAwait(false);
+        }
+
+        Debug.WriteLine(response.IsSuccessStatusCode ? "Success check" : "Failed check");
+
+#if DEBUG
+        Debug.WriteLine(response.IsSuccessStatusCode
+            ? $"Backend pinged successfully {response.StatusCode}"
+            : "Failed ping");
+#endif
+        return response.IsSuccessStatusCode;
+    }
+
+    public async Task<string?> ReadJsonResponse(string directory, string fileName = "response")
+    {
+        string path = Path.Combine(directory, $"{fileName}.json");
+        if (!File.Exists(path))
+        {
+#if DEBUG
+            Debug.WriteLine($"{fileName}.json file not found");
+#endif
+            return null;
+        }
+        string content = await File.ReadAllTextAsync(path).ConfigureAwait(false);
+#if DEBUG
+        Debug.WriteLine($"Read content from {fileName}.json: {content}");
+#endif
+        return content;
     }
 }
