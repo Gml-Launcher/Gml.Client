@@ -19,6 +19,7 @@ public interface IGmlClientManager : IDisposable
     public string ProjectName { get; }
     IObservable<int> MaxFileCount { get; }
     IObservable<int> LoadedFilesCount { get; }
+    IObservable<long> DownloadedBytesDelta { get; }
     string InstallationDirectory { get; }
     bool SkipUpdate { get; set; }
     Task<ResponseMessage<List<ProfileReadDto>>> GetProfiles();

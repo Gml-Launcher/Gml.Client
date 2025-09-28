@@ -1,5 +1,6 @@
 using System.Diagnostics;
 using System.Net;
+using System.Net.Http.Headers;
 using System.Reactive.Subjects;
 using System.Runtime.InteropServices;
 using System.Text;
@@ -33,6 +34,7 @@ public class ApiProcedures
     private readonly OsType _osType;
 
     private readonly ISubject<int> _progressChanged = new Subject<int>();
+    private readonly ISubject<long> _downloadedBytesDelta = new Subject<long>();
     private (DiscordRpcClient? Client, DiscordRpcReadDto? ClientInfo)? _discordRpcClient;
     private int _finishedFilesCount;
     private int _progress;
@@ -51,6 +53,7 @@ public class ApiProcedures
     public IObservable<int> ProgressChanged => _progressChanged;
     public IObservable<int> MaxFileCount => _maxFileCount;
     public IObservable<int> LoadedFilesCount => _loadedFilesCount;
+    public IObservable<long> DownloadedBytesDelta => _downloadedBytesDelta;
     internal event EventHandler<string>? FileAdded;
 
     public async void SaveJsonResponse(string? content, string savePath, string filename = "response")
@@ -93,8 +96,7 @@ public class ApiProcedures
         {
             try
             {
-                _httpClient.DefaultRequestHeaders.Remove("Authorization");
-                _httpClient.DefaultRequestHeaders.Add("Authorization", $"Bearer {accessToken}");
+                _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
 
                 var response = await _httpClient.GetAsync("/api/v1/profiles").ConfigureAwait(false);
 
@@ -549,9 +551,17 @@ public class ApiProcedures
 
             await using (var fs = new FileStream(localPath, FileMode.OpenOrCreate))
             {
-                await using (var stream = await _httpClient.GetStreamAsync(url))
+                using (var response = await _httpClient.GetAsync(url, HttpCompletionOption.ResponseHeadersRead, cancellationToken))
                 {
-                    await stream.CopyToAsync(fs, cancellationToken);
+                    response.EnsureSuccessStatusCode();
+                    using var stream = await response.Content.ReadAsStreamAsync();
+                    var buffer = new byte[81920];
+                    int read;
+                    while ((read = await stream.ReadAsync(buffer, 0, buffer.Length, cancellationToken)) > 0)
+                    {
+                        await fs.WriteAsync(buffer, 0, read, cancellationToken);
+                        _downloadedBytesDelta.OnNext(read);
+                    }
                 }
 
                 #if DEBUG

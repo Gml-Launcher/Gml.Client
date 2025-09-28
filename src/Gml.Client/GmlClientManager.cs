@@ -64,6 +64,7 @@ public class GmlClientManager : IGmlClientManager
     public IObservable<bool> ProfilesChanges => _profilesChanged;
     public IObservable<int> MaxFileCount => _maxFileCount;
     public IObservable<int> LoadedFilesCount => _loadedFilesCount;
+    public IObservable<long> DownloadedBytesDelta => _apiProcedures.DownloadedBytesDelta;
 
     public string ProjectName { get; }
     public string InstallationDirectory { get; private set; }
