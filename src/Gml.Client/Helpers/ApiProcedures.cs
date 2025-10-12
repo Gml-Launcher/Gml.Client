@@ -736,7 +736,7 @@ public class ApiProcedures
         var result = JsonConvert.DeserializeObject<ResponseMessage<PlayerTextureDto?>>(content);
 
         if (result?.Data is not null)
-            result.Data.FullSkinUrl =
+            result.Data.FullSkinUrl = result.Data.ExternalTextureSkinUrl ??
                 $"{_httpClient.BaseAddress.AbsoluteUri}api/v1/integrations/texture/skins/{result.Data.TextureSkinGuid}";
 
 #if DEBUG

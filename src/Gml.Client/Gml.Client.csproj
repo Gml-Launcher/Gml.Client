@@ -19,7 +19,7 @@
   <ItemGroup>
     <PackageReference Include="Avalonia" Version="11.3.3" />
     <PackageReference Include="DiscordRichPresence" Version="1.6.1.70" />
-    <PackageReference Include="Gml.Web.Api.Dto" Version="2025.2.0" />
+    <PackageReference Include="Gml.Web.Api.Dto" Version="2025.2.2.1-alpha" />
     <PackageReference Include="Microsoft.AspNetCore.SignalR.Client" Version="9.0.8" />
     <PackageReference Include="Newtonsoft.Json" Version="13.0.3"/>
     <PackageReference Include="Sentry" Version="5.13.0" />

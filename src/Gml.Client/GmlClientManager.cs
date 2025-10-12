@@ -130,7 +130,7 @@ public class GmlClientManager : IGmlClientManager
                 foreach (var profile in result.Data)
                 {
                     profile.Background = null;
-                    profile.State = GmlCore.Interfaces.Enums.ProfileState.Offline;
+                    profile.State = GmlCore.Interfaces.Enums.ProfileState.Created;
                     profile.Servers = new List<ServerReadDto>();
                 }
             }
@@ -215,7 +215,7 @@ public class GmlClientManager : IGmlClientManager
             if (dto?.Data != null)
             {
                 dto.Data.Background = null;
-                dto.Data.State = GmlCore.Interfaces.Enums.ProfileState.Offline;
+                dto.Data.State = GmlCore.Interfaces.Enums.ProfileState.Created;
             }
 
             return dto;
