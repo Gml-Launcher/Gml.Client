@@ -1,9 +1,9 @@
 ﻿using System.Collections.Concurrent;
 using System.Security.Cryptography;
 using Gml.Client.Helpers.Files;
+using Gml.Dto.Files;
+using Gml.Dto.Profile;
 using Gml.Web.Api.Domains.System;
-using Gml.Web.Api.Dto.Files;
-using Gml.Web.Api.Dto.Profile;
 
 namespace Gml.Client.Helpers;
 
