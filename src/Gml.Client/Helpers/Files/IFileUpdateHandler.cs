@@ -1,7 +1,4 @@
-using System.Diagnostics;
-using Gml.Web.Api.Dto.Profile;
-using System.Threading.Tasks;
-using Newtonsoft.Json;
+using Gml.Dto.Profile;
 
 namespace Gml.Client.Helpers.Files;
 

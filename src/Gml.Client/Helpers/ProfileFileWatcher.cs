@@ -1,5 +1,5 @@
 ﻿using System.Diagnostics;
-using Gml.Web.Api.Dto.Files;
+using Gml.Dto.Files;
 
 namespace Gml.Client.Helpers;
 

@@ -1,5 +1,6 @@
-using Gml.Web.Api.Dto.Files;
-using Gml.Web.Api.Dto.Profile;
+
+using Gml.Dto.Files;
+using Gml.Dto.Profile;
 
 namespace Gml.Client.Helpers.Files;
 
