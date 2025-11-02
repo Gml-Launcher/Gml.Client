@@ -20,7 +20,7 @@
     <PackageReference Include="Avalonia" Version="11.3.3" />
     <PackageReference Include="DiscordRichPresence" Version="1.6.1.70" />
     <PackageReference Include="Gml.Dto" Version="2025.3.2" />
-    <PackageReference Include="Microsoft.AspNetCore.SignalR.Client" Version="9.0.8" />
+    <PackageReference Include="Microsoft.AspNetCore.SignalR.Client" Version="8.0.21" />
     <PackageReference Include="Newtonsoft.Json" Version="13.0.3"/>
     <PackageReference Include="Sentry" Version="5.13.0" />
     <PackageReference Include="System.Reactive" Version="6.0.1"/>
