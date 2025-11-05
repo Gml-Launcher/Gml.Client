@@ -37,14 +37,14 @@ public class GmlClientManager : IGmlClientManager
     {
         InstallationDirectory = installationDirectory;
 
-        var hostUri = new Uri(gateWay);
+        HostUri = new Uri(gateWay);
 
         _osType = osType;
         _systemProcedures = new SystemIoProcedures(installationDirectory, osType);
         _offlineProfilesDirectory = Path.Combine(InstallationDirectory, "offline-mode");
         _apiProcedures = new ApiProcedures(new HttpClient
         {
-            BaseAddress = hostUri
+            BaseAddress = HostUri
         }, osType);
 
         _apiProcedures.ProgressChanged.Subscribe(_progressChanged);
@@ -53,11 +53,13 @@ public class GmlClientManager : IGmlClientManager
 
         ProjectName = projectName;
 
-        if (hostUri.Scheme == Uri.UriSchemeHttps)
-            _webSocketAddress = "wss://" + hostUri.Host + (hostUri.IsDefaultPort ? "" : ":" + hostUri.Port);
-        else if (hostUri.Scheme == Uri.UriSchemeHttp)
-            _webSocketAddress = "ws://" + hostUri.Host + (hostUri.IsDefaultPort ? "" : ":" + hostUri.Port);
+        if (HostUri.Scheme == Uri.UriSchemeHttps)
+            _webSocketAddress = "wss://" + HostUri.Host + (HostUri.IsDefaultPort ? "" : ":" + HostUri.Port);
+        else if (HostUri.Scheme == Uri.UriSchemeHttp)
+            _webSocketAddress = "ws://" + HostUri.Host + (HostUri.IsDefaultPort ? "" : ":" + HostUri.Port);
     }
+
+    public Uri HostUri { get; set; }
 
     IObservable<int> IGmlClientManager.ProgressChanged => _progressChanged;
     public IObservable<bool> ProfilesChanges => _profilesChanged;

@@ -22,6 +22,7 @@ public interface IGmlClientManager : IDisposable
     IObservable<long> DownloadedBytesDelta { get; }
     string InstallationDirectory { get; }
     bool SkipUpdate { get; set; }
+    Uri HostUri { get; set; }
     Task<ResponseMessage<List<ProfileReadDto>>> GetProfiles();
     Task<ResponseMessage<List<ModsDetailsInfoDto>>> GetOptionalModsInfo(string accessToken);
     Task<ResponseMessage<List<ProfileReadDto>>> GetProfiles(string accessToken);
