@@ -6,6 +6,7 @@ using GmlCore.Interfaces.User;
 using Newtonsoft.Json;
 using System.ComponentModel;
 using System.Diagnostics;
+using System.Net.NetworkInformation;
 using System.Reactive.Subjects;
 using System.Runtime.InteropServices;
 using Gml.Dto.Files;
@@ -357,5 +358,36 @@ public class GmlClientManager : IGmlClientManager
     public static Task<bool> CheckApiAsync(string hostUrl)
     {
         return ApiProcedures.CheckBackend(hostUrl);
+    }
+
+    public static string CheckApiStatus(params string[] hosts)
+    {
+        foreach (var host in hosts)
+        {
+            try
+            {
+                var ping = new Ping();
+                var uri = new Uri(host);
+                var reply = ping.Send(uri.Host, 1000);
+
+                if (reply is not null && reply.Status == IPStatus.Success && CheckApiAsync(host).Result)
+                {
+                    return host;
+                }
+            }
+            catch (AggregateException exception)
+            {
+                if (exception.InnerException is HttpRequestException)
+                {
+                    Console.WriteLine($"Host {host} is not available");
+                }
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e);
+            }
+        }
+
+        return hosts.First();
     }
 }
