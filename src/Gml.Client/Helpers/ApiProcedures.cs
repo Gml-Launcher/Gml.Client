@@ -275,7 +275,7 @@ public class ApiProcedures
                 var chmodStartInfo = new ProcessStartInfo
                 {
                     FileName = "/bin/bash",
-                    Arguments = $"-c \"chmod +x {startInfoFileName}\""
+                    Arguments = $"-c \"chmod +x '{startInfoFileName}\"'"
                 };
                 Process.Start(chmodStartInfo);
                 break;
@@ -472,7 +472,7 @@ public class ApiProcedures
         // Исполнение всех задач.
         await Task.WhenAll(tasks);
 #if DEBUG
-        Debug.WriteLine("All files downloaded.");
+        //Debug.WriteLine("All files downloaded.");
 #endif
     }
 
@@ -576,7 +576,7 @@ public class ApiProcedures
             _progressChanged.OnNext(_progress);
             _loadedFilesCount.OnNext(_finishedFilesCount);
 #if DEBUG
-            Debug.WriteLine($"{_finishedFilesCount}/{_progressFilesCount} files downloaded [{file.Directory}].");
+            //Debug.WriteLine($"{_finishedFilesCount}/{_progressFilesCount} files downloaded [{file.Directory}].");
 #endif
         }
         catch (IOException ex)
