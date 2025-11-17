@@ -207,7 +207,7 @@ public class ApiProcedures
         Debug.WriteLine("Calling GetStartProcess()");
 #endif
         // var profilePath = installationDirectory + @"\clients\" + profileDto.ProfileName;
-        var profilePath = Path.Combine(installationDirectory, "clients", profileDto.ProfileName);
+        var profilePath = Path.Combine(installationDirectory, profileDto.ReleativePath);
 
         Dictionary<string, string> parameters;
 

@@ -20,8 +20,10 @@ public class WhiteListFolderDecorator : IFileUpdateHandler
         result.FilesToDelete = result.FilesToDelete.Where(file =>
             !profileInfo.WhiteListFolders.Any(folder =>
                 SystemIoProcedures.NormalizePath(file.Directory).StartsWith(
-                    SystemIoProcedures.NormalizePath(Path.Combine("clients", profileInfo.ProfileName, folder.Path)),
-                    StringComparison.OrdinalIgnoreCase)));
+                    SystemIoProcedures.NormalizePath(Path.Combine(folder.Path)),
+                    StringComparison.OrdinalIgnoreCase))
+
+            );
 
         result.FilesToUpdate = result.FilesToUpdate.Where(file =>
         {
@@ -37,7 +39,7 @@ public class WhiteListFolderDecorator : IFileUpdateHandler
     {
         return !profileInfo.WhiteListFolders.Any(folder =>
             SystemIoProcedures.NormalizePath(file.Directory).StartsWith(
-                SystemIoProcedures.NormalizePath(Path.Combine("clients", profileInfo.ProfileName, folder.Path)),
+                SystemIoProcedures.NormalizePath(Path.Combine(profileInfo.ReleativePath, folder.Path)),
                 StringComparison.OrdinalIgnoreCase));
     }
 

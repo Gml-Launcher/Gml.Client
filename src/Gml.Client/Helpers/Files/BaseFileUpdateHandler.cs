@@ -11,7 +11,7 @@ public class BaseFileUpdateHandler : IFileUpdateHandler
         string rootDirectory)
     {
         var localFiles = new List<ProfileFileReadDto>();
-        var profilePath = Path.Combine(rootDirectory, "clients", profileInfo.ProfileName);
+        var profilePath = Path.Combine(rootDirectory, profileInfo.ReleativePath);
 
         if (!Directory.Exists(profilePath))
         {
