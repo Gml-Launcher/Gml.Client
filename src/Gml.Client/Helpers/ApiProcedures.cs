@@ -46,7 +46,12 @@ public class ApiProcedures
         _osType = osType;
 
         _httpClient.DefaultRequestHeaders.UserAgent.ParseAdd(
-            $"Gml.Launcher-Client-{nameof(GmlClientManager)}/1.0 (OS: {Environment.OSVersion};)");
+            $"Gml.Launcher-Client-{nameof(GmlClientManager)}/1.0 " +
+            $"(OS: {RuntimeInformation.OSDescription.Replace(";", ",")}; " +
+            $"OSArchitecture: {RuntimeInformation.OSArchitecture}; " +
+            $"ProcessArchitecture: {RuntimeInformation.ProcessArchitecture}; " +
+            $"FrameworkDescription: {RuntimeInformation.FrameworkDescription.Replace(";", ",")}; " +
+            $".NET: {Environment.Version.ToString(3)};)");
     }
 
     public IObservable<int> ProgressChanged => _progressChanged;
