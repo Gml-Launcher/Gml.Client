@@ -27,12 +27,12 @@ public class BaseFileUpdateHandler : IFileUpdateHandler
             ? Directory.GetFiles(profilePath, "*.*", SearchOption.AllDirectories)
             : [];
 
-        var assetsPath = Path.Combine(rootDirectory, "assets");
+        var assetsPath = Path.Combine(rootDirectory, "shared data", "assets");
         var assetsFiles = Directory.Exists(assetsPath)
             ? Directory.GetFiles(assetsPath, "*.*", SearchOption.AllDirectories)
             : [];
 
-        var runtimePath = Path.Combine(rootDirectory, "runtime");
+        var runtimePath = Path.Combine(rootDirectory, "shared data", "runtime");
         var runtimeFiles = Directory.Exists(runtimePath)
             ? Directory.GetFiles(runtimePath, "*.*", SearchOption.AllDirectories)
             : [];
