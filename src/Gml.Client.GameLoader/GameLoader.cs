@@ -5,7 +5,7 @@ using System.Reactive.Subjects;
 using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
-using Gml.Client.Exceptions;
+using Gml.Client.Extensions;
 using Gml.Client.Interfaces;
 using Gml.Dto.Messages;
 using Gml.Dto.Profile;

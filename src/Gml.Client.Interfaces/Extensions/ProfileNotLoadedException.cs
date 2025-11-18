@@ -1,6 +1,4 @@
-using System;
-
-namespace Gml.Client.Exceptions;
+namespace Gml.Client.Extensions;
 
 public class ProfileNotLoadedException : Exception
 {
