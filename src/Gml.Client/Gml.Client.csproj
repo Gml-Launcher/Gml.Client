@@ -19,7 +19,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\Gml.Client.Interfaces\Gml.Client.Interfaces.csproj" />
+    <ProjectReference Include="..\Gml.Client.GameLoader\Gml.Client.GameLoader.csproj" />
   </ItemGroup>
 
 </Project>

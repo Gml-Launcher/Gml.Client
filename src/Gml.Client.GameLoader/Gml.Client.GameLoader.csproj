@@ -5,10 +5,6 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <LangVersion>latest</LangVersion>
-    <Company>Gml.Client</Company>
-    <Product>Gml.Client</Product>
-    <AssemblyName>Gml.Client</AssemblyName>
-    <RootNamespace>Gml.Client</RootNamespace>
   </PropertyGroup>
 
   <ItemGroup>
