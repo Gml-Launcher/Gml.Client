@@ -1,5 +1,6 @@
 using System.Diagnostics;
 using System.Reactive.Subjects;
+using Gml.Client.Interfaces;
 using Gml.Client.Models;
 using Microsoft.AspNetCore.SignalR.Client;
 
@@ -9,13 +10,13 @@ public class SignalRConnect : IDisposable, IAsyncDisposable
 {
     private readonly string _address;
     private readonly ISubject<bool> _profilesChanged = new Subject<bool>();
-    private readonly IUser _user;
+    private readonly ILauncherUser _launcherUser;
     private HubConnection _hubConnection;
 
-    public SignalRConnect(string address, IUser user)
+    public SignalRConnect(string address, ILauncherUser launcherUser)
     {
         _address = address;
-        _user = user;
+        _launcherUser = launcherUser;
     }
 
     public IObservable<bool> ProfilesChanges => _profilesChanged;
@@ -32,7 +33,7 @@ public class SignalRConnect : IDisposable, IAsyncDisposable
 
     private string BuildHubUrl()
     {
-        return $"{_address}?access_token={_user.AccessToken}";
+        return $"{_address}?access_token={_launcherUser.AccessToken}";
     }
 
     public async Task BuildAndConnect()
@@ -77,6 +78,6 @@ public class SignalRConnect : IDisposable, IAsyncDisposable
 
     public Task UpdateInfo()
     {
-        return _hubConnection.SendAsync("UpdateUserLauncher", _user.Name);
+        return _hubConnection.SendAsync("UpdateUserLauncher", _launcherUser.Name);
     }
 }

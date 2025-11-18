@@ -1,6 +1,6 @@
-﻿namespace Gml.Client.Models;
+﻿namespace Gml.Client.Interfaces;
 
-public interface IUser
+public interface ILauncherUser
 {
     public string Name { get; set; }
     public string AccessToken { get; set; }

@@ -1,0 +1,17 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netstandard2.1</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <LangVersion>latest</LangVersion>
+    <Company>Gml.Client</Company>
+    <Product>Gml.Client</Product>
+    <AssemblyName>Gml.Client</AssemblyName>
+    <RootNamespace>Gml.Client</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Gml.Client.Interfaces\Gml.Client.Interfaces.csproj" />
+  </ItemGroup>
+</Project>

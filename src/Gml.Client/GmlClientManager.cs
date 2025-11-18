@@ -9,13 +9,13 @@ using System.Diagnostics;
 using System.Net.NetworkInformation;
 using System.Reactive.Subjects;
 using System.Runtime.InteropServices;
+using Gml.Client.Interfaces;
 using Gml.Dto.Files;
 using Gml.Dto.Messages;
 using Gml.Dto.Mods;
 using Gml.Dto.News;
 using Gml.Dto.Profile;
 using Gml.Dto.Servers;
-using IUser = Gml.Client.Models.IUser;
 
 namespace Gml.Client;
 
@@ -34,10 +34,12 @@ public class GmlClientManager : IGmlClientManager
     private IDisposable? _profilesChangedEvent;
     private SystemIoProcedures _systemProcedures;
 
-    public GmlClientManager(string installationDirectory, string gateWay, string projectName, OsType osType)
+    public GmlClientManager(string installationDirectory, string gateWay, IGameLoader gameLoader, string projectName,
+        OsType osType)
     {
         InstallationDirectory = installationDirectory;
-
+        Gameloader = gameLoader;
+        Gameloader.Manager = this;
         HostUri = new Uri(gateWay);
 
         _osType = osType;
@@ -61,6 +63,7 @@ public class GmlClientManager : IGmlClientManager
     }
 
     public Uri HostUri { get; set; }
+    public IGameLoader Gameloader { get; }
 
     IObservable<int> IGmlClientManager.ProgressChanged => _progressChanged;
     public IObservable<bool> ProfilesChanges => _profilesChanged;
@@ -264,13 +267,13 @@ public class GmlClientManager : IGmlClientManager
         await _apiProcedures.DownloadFiles(InstallationDirectory, profileInfo.ToArray(), 60, cancellationToken);
     }
 
-    public Task<(IUser User, string Message, IEnumerable<string> Details)> Auth(string login, string password,
+    public Task<(ILauncherUser User, string Message, IEnumerable<string> Details)> Auth(string login, string password,
         string hwid)
     {
         return AuthWith2Fa(login, password, hwid, string.Empty);
     }
 
-    public async Task<(IUser User, string Message, IEnumerable<string> Details)> AuthWith2Fa(string login, string password,
+    public async Task<(ILauncherUser User, string Message, IEnumerable<string> Details)> AuthWith2Fa(string login, string password,
         string hwid, string twoFactorCode)
     {
         var user = await _apiProcedures.AuthWith2Fa(login, password, hwid, twoFactorCode);
@@ -289,7 +292,7 @@ public class GmlClientManager : IGmlClientManager
         return _apiProcedures.GetTexturesByName(userName);
     }
 
-    public async Task<(IUser User, string Message, IEnumerable<string> Details)> Auth(string accessToken)
+    public async Task<(ILauncherUser User, string Message, IEnumerable<string> Details)> Auth(string accessToken)
     {
         var user = await _apiProcedures.Auth(accessToken);
 
@@ -303,7 +306,7 @@ public class GmlClientManager : IGmlClientManager
         return user;
     }
 
-    public async Task OpenServerConnection(IUser user)
+    public async Task OpenServerConnection(ILauncherUser launcherUser)
     {
         _profilesChangedEvent?.Dispose();
         if (_launchBackendConnection is not null)
@@ -313,7 +316,7 @@ public class GmlClientManager : IGmlClientManager
             _profilesChangedEvent = null;
         }
 
-        _launchBackendConnection = new SignalRConnect($"{_webSocketAddress}/ws/launcher", user);
+        _launchBackendConnection = new SignalRConnect($"{_webSocketAddress}/ws/launcher", launcherUser);
         _profilesChangedEvent ??= _launchBackendConnection.ProfilesChanges.Subscribe(_profilesChanged);
         await _launchBackendConnection.BuildAndConnect();
     }

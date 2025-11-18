@@ -5,6 +5,7 @@ using System.Reactive.Subjects;
 using System.Runtime.InteropServices;
 using System.Text;
 using DiscordRPC;
+using Gml.Client.Interfaces;
 using Gml.Client.Models;
 using Gml.Domains.Launcher;
 using Gml.Dto.Files;
@@ -20,7 +21,6 @@ using Gml.Web.Api.Domains.System;
 using GmlCore.Interfaces.Storage;
 using GmlCore.Interfaces.User;
 using Newtonsoft.Json;
-using IUser = Gml.Client.Models.IUser;
 
 namespace Gml.Client.Helpers;
 
@@ -358,7 +358,7 @@ public class ApiProcedures
         return string.Empty;
     }
 
-    public async Task<(IUser User, string Message, IEnumerable<string> Details)> Auth(string accessToken)
+    public async Task<(ILauncherUser User, string Message, IEnumerable<string> Details)> Auth(string accessToken)
     {
 #if DEBUG
         Debug.WriteLine("Calling Auth(string accessToken)");
@@ -368,7 +368,7 @@ public class ApiProcedures
             AccessToken = accessToken
         });
 
-        var authUser = new AuthUser();
+        var authUser = new AuthLauncherUser();
 
         var data = new StringContent(model, Encoding.UTF8, "application/json");
         var response = await _httpClient.PostAsync("/api/v1/integrations/auth/checkToken", data).ConfigureAwait(false);
@@ -405,7 +405,7 @@ public class ApiProcedures
         return (authUser, dto?.Message ?? string.Empty, dto?.Errors ?? []);
     }
 
-    public async Task<(IUser User, string Message, IEnumerable<string> Details)> AuthWith2Fa(string login, string password,
+    public async Task<(ILauncherUser User, string Message, IEnumerable<string> Details)> AuthWith2Fa(string login, string password,
         string hwid, string twoFactorCode)
     {
 #if DEBUG
@@ -419,7 +419,7 @@ public class ApiProcedures
             AccessToken = string.Empty
         });
 
-        var authUser = new AuthUser
+        var authUser = new AuthLauncherUser
         {
             Name = login
         };

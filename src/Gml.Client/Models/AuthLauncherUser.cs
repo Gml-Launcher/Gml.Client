@@ -1,6 +1,8 @@
-﻿namespace Gml.Client.Models;
+﻿using Gml.Client.Interfaces;
 
-public class AuthUser : IUser
+namespace Gml.Client.Models;
+
+public class AuthLauncherUser : ILauncherUser
 {
     public string Name { get; set; } = string.Empty;
     public string AccessToken { get; set; } = string.Empty;

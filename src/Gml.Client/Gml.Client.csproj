@@ -8,23 +8,18 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Compile Update="GmlClientManager.cs">
-      <DependentUpon>IGmlClientManager.cs</DependentUpon>
-    </Compile>
-    <Compile Update="Models\AuthUser.cs">
-      <DependentUpon>IUser.cs</DependentUpon>
-    </Compile>
-  </ItemGroup>
-
-  <ItemGroup>
     <PackageReference Include="Avalonia" Version="11.3.3" />
     <PackageReference Include="DiscordRichPresence" Version="1.6.1.70" />
-    <PackageReference Include="Gml.Dto" Version="2025.3.3-alpha3" />
+    <PackageReference Include="Gml.Dto" Version="2025.3.3-alpha4" />
     <PackageReference Include="Microsoft.AspNetCore.SignalR.Client" Version="8.0.21" />
     <PackageReference Include="Newtonsoft.Json" Version="13.0.4" />
     <PackageReference Include="Sentry" Version="5.13.0" />
     <PackageReference Include="System.Reactive" Version="6.0.1"/>
     <PackageReference Include="System.Threading.Tasks" Version="4.3.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Gml.Client.Interfaces\Gml.Client.Interfaces.csproj" />
   </ItemGroup>
 
 </Project>

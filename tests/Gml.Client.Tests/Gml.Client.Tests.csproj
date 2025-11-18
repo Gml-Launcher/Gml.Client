@@ -24,6 +24,8 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\..\src\Gml.Client.GameLoader\Gml.Client.GameLoader.csproj" />
+    <ProjectReference Include="..\..\src\Gml.Client.Interfaces\Gml.Client.Interfaces.csproj" />
     <ProjectReference Include="..\..\src\Gml.Client\Gml.Client.csproj"/>
   </ItemGroup>
 
