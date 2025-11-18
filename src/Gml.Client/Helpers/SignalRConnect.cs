@@ -1,5 +1,7 @@
+using System;
 using System.Diagnostics;
 using System.Reactive.Subjects;
+using System.Threading.Tasks;
 using Gml.Client.Interfaces;
 using Gml.Client.Models;
 using Microsoft.AspNetCore.SignalR.Client;

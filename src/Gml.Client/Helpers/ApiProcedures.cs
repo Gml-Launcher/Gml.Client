@@ -1,9 +1,16 @@
+using System;
+using System.Collections.Generic;
 using System.Diagnostics;
+using System.IO;
+using System.Linq;
 using System.Net;
+using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Reactive.Subjects;
 using System.Runtime.InteropServices;
 using System.Text;
+using System.Threading;
+using System.Threading.Tasks;
 using DiscordRPC;
 using Gml.Client.Interfaces;
 using Gml.Client.Models;
@@ -21,6 +28,7 @@ using Gml.Web.Api.Domains.System;
 using GmlCore.Interfaces.Storage;
 using GmlCore.Interfaces.User;
 using Newtonsoft.Json;
+using Sentry;
 
 namespace Gml.Client.Helpers;
 

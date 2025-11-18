@@ -1,5 +1,10 @@
-﻿using System.Diagnostics;
+﻿using System;
+using System.Diagnostics;
+using System.Reactive.Linq;
+using System.Reactive.Subjects;
 using System.Runtime.InteropServices;
+using System.Threading;
+using System.Threading.Tasks;
 using Gml.Client.Exceptions;
 using Gml.Client.Interfaces;
 using Gml.Dto.Messages;
@@ -11,6 +16,10 @@ namespace Gml.Client;
 
 public class GameLoader : IGameLoader
 {
+    private ISubject<Process> _gameLaunched = new Subject<Process>();
+    private Process? _process;
+    public IObservable<Process> GameLaunched => _gameLaunched.AsObservable();
+
     public Task StartGameAsync(ResponseMessage<ProfileReadInfoDto?>? profileInfo, bool isOnline)
     {
         if (profileInfo?.Data is null)
@@ -21,6 +30,18 @@ public class GameLoader : IGameLoader
         var osType = GetOsType();
 
         return InitializeAsync(profileInfo.Data!, osType, isOnline, CancellationToken.None);
+    }
+
+    public void ForceStop()
+    {
+        try
+        {
+            _process?.Kill();
+        }
+        catch (Exception e)
+        {
+            Console.WriteLine(e);
+        }
     }
 
     private OsType GetOsType()
@@ -44,28 +65,28 @@ public class GameLoader : IGameLoader
             await Manager.DownloadNotInstalledFiles(profile, cancellationToken);
         }
 
-        var process = await Manager.GetProcess(profile, osType, !isOnline);
+        _process = await Manager.GetProcess(profile, osType, !isOnline);
 
-        // process.OutputDataReceived += (_, e) =>
-        // {
-        //     if (!string.IsNullOrEmpty(e.Data))
-        //     {
-        //         Debug.WriteLine(e.Data);
-        //         _logHandler.ProcessLogs(e.Data);
-        //     }
-        // };
-        //
-        // process.ErrorDataReceived += (sender, e) =>
-        // {
-        //     if (e.Data is null || string.IsNullOrEmpty(e.Data))
-        //     {
-        //         return;
-        //     }
-        //
-        //     Debug.WriteLine(e.Data);
-        //
-        //     _logHandler.ProcessLogs(e.Data);
-        // };
+        _process.OutputDataReceived += (_, e) =>
+        {
+            if (!string.IsNullOrEmpty(e.Data))
+            {
+                Debug.WriteLine(e.Data);
+                // _logHandler.ProcessLogs(e.Data);
+            }
+        };
+
+        _process.ErrorDataReceived += (sender, e) =>
+        {
+            if (e.Data is null || string.IsNullOrEmpty(e.Data))
+            {
+                return;
+            }
+
+            Debug.WriteLine(e.Data);
+
+            // _logHandler.ProcessLogs(e.Data);
+        };
 
         // UpdateProgress(
         //     LocalizationService.GetString(ResourceKeysDictionary.Launching),
@@ -73,7 +94,16 @@ public class GameLoader : IGameLoader
         //     true);
         //
         // return process;
+        _process.Start();
 
+        _process.BeginOutputReadLine();
+        _process.BeginErrorReadLine();
+        _gameLaunched.OnNext(_process);
+
+#if NET8_0
+        await _process.WaitForExitAsync(cancellationToken);
+#endif
+        _process.WaitForExit();
     }
 
     public IGmlClientManager Manager { get; set; }

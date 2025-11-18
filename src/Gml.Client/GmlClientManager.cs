@@ -1,3 +1,5 @@
+using System;
+using System.Collections.Generic;
 using Gml.Client.Extensions;
 using Gml.Client.Helpers;
 using Gml.Web.Api.Domains.System;
@@ -6,9 +8,14 @@ using GmlCore.Interfaces.User;
 using Newtonsoft.Json;
 using System.ComponentModel;
 using System.Diagnostics;
+using System.IO;
+using System.Linq;
+using System.Net.Http;
 using System.Net.NetworkInformation;
 using System.Reactive.Subjects;
 using System.Runtime.InteropServices;
+using System.Threading;
+using System.Threading.Tasks;
 using Gml.Client.Interfaces;
 using Gml.Dto.Files;
 using Gml.Dto.Messages;
@@ -16,6 +23,7 @@ using Gml.Dto.Mods;
 using Gml.Dto.News;
 using Gml.Dto.Profile;
 using Gml.Dto.Servers;
+using Sentry;
 
 namespace Gml.Client;
 
