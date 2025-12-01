@@ -181,8 +181,9 @@ public class GmlClientManager : IGmlClientManager
     {
         var version = versionInfo.ActualVersion?.Version ?? "1.0.0.0";
         var fileName = $"{Path.GetFileName(originalFileName)}-{version}{Path.GetExtension(originalFileName)}";
+        var installDirectory = new DirectoryInfo(InstallationDirectory);
 
-        var tempFile = new FileInfo(Path.Combine(Path.GetTempPath(), version, fileName));
+        var tempFile = new FileInfo(Path.Combine(Path.GetTempPath(), installDirectory.Name, version, fileName));
 
         if (tempFile.Exists)
         {
