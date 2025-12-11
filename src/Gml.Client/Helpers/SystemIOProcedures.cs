@@ -95,7 +95,7 @@ public class SystemIoProcedures
             List<string> allowedPaths = [];
 
             allowedPaths.AddRange(profileInfo.WhiteListFolders.Select(path =>
-                Path.GetFullPath(Path.Combine(_installationDirectory, "clients", profileInfo.ProfileName,
+                Path.GetFullPath(Path.Combine(_installationDirectory, "game data", profileInfo.ProfileName,
                     Path.Combine(path.Path.Split(Path.DirectorySeparatorChar, StringSplitOptions.RemoveEmptyEntries)))))
             );
 
