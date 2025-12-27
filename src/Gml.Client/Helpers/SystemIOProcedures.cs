@@ -1,5 +1,10 @@
-﻿using System.Collections.Concurrent;
+﻿using System;
+using System.Collections.Concurrent;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
 using System.Security.Cryptography;
+using System.Threading.Tasks;
 using Gml.Client.Helpers.Files;
 using Gml.Dto.Files;
 using Gml.Dto.Profile;
@@ -9,7 +14,7 @@ namespace Gml.Client.Helpers;
 
 public class SystemIoProcedures
 {
-    private const long _oneHundredMB = 100 * 1024 * 1024;
+    private const long OneHundredMb = 100 * 1024 * 1024;
     private readonly string _installationDirectory;
     private readonly OsType _osType;
 
@@ -39,7 +44,7 @@ public class SystemIoProcedures
 
             if (FileExists(localPath))
             {
-                if (new FileInfo(localPath).Length >= _oneHundredMB) return;
+                if (new FileInfo(localPath).Length >= OneHundredMb) return;
 
                 var hashIsCorrect = SystemHelper.CalculateFileHash(localPath, SHA1.Create()) ==
                                                                               downloadingFile.Hash;
@@ -87,33 +92,27 @@ public class SystemIoProcedures
     {
         try
         {
-            List<string> allowedPaths =
-            [
-                Path.GetFullPath(Path.Combine(_installationDirectory, "clients", profileInfo.ProfileName, "saves")),
-                Path.GetFullPath(Path.Combine(_installationDirectory, "clients", profileInfo.ProfileName, "logs")),
-                Path.GetFullPath(Path.Combine(_installationDirectory, "clients", profileInfo.ProfileName,
-                    "crash-reports"))
-            ];
+            List<string> allowedPaths = [];
 
             allowedPaths.AddRange(profileInfo.WhiteListFolders.Select(path =>
-                Path.GetFullPath(Path.Combine(_installationDirectory, "clients", profileInfo.ProfileName,
+                Path.GetFullPath(Path.Combine(_installationDirectory, "game data", profileInfo.ProfileName,
                     Path.Combine(path.Path.Split(Path.DirectorySeparatorChar, StringSplitOptions.RemoveEmptyEntries)))))
             );
 
             var profilePath =
-                Path.GetFullPath(Path.Combine(_installationDirectory, "clients", profileInfo.ProfileName));
+                Path.GetFullPath(Path.Combine(_installationDirectory, profileInfo.ReleativePath));
 
             var directoryInfo = new DirectoryInfo(profilePath);
 
             if (!directoryInfo.Exists) directoryInfo.Create();
 
             var localFiles = directoryInfo.GetFiles("*.*", SearchOption.AllDirectories);
-
-            var hashSet = profileInfo.Files
-                .Select(f => Path.GetFullPath(GetRealFilePath(_installationDirectory, f)))
-                .Concat(profileInfo.WhiteListFiles
-                    .Select(wf => Path.GetFullPath(GetRealFilePath(_installationDirectory, wf))))
-                .ToHashSet();
+            //
+            // var hashSet = profileInfo.Files
+            //     .Select(f => Path.GetFullPath(GetRealFilePath(_installationDirectory, f)))
+            //     .Concat(profileInfo.WhiteListFiles
+            //         .Select(wf => Path.GetFullPath(GetRealFilePath(_installationDirectory, wf))))
+            //     .ToHashSet();
 
             bool IsNeedRemove(FileInfo fileInfo)
             {
@@ -169,17 +168,7 @@ public class SystemIoProcedures
     {
         using var hash = SHA1.Create();
 
-        return profileFile.Hash == SystemHelper.CalculateFileHash(fileInfo.FullName, hash);;
-    }
-
-    private string GetRealFilePath(string installationDirectory, ProfileFileReadDto file)
-    {
-        if (_osType == OsType.Windows)
-            file.Directory = file.Directory.Replace('/', Path.DirectorySeparatorChar)
-                .TrimStart(Path.DirectorySeparatorChar);
-
-        return Path.Combine(installationDirectory,
-            file.Directory.TrimStart('\\').TrimStart(Path.DirectorySeparatorChar));
+        return profileFile.Hash == SystemHelper.CalculateFileHash(fileInfo.FullName, hash);
     }
 
     public async Task<(ProfileFileReadDto[] ToUpdate, ProfileFileReadDto[] ToDelete)> ValidateFilesAsync(

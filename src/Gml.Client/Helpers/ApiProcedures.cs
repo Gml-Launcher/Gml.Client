@@ -1,10 +1,18 @@
+using System;
+using System.Collections.Generic;
 using System.Diagnostics;
+using System.IO;
+using System.Linq;
 using System.Net;
+using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Reactive.Subjects;
 using System.Runtime.InteropServices;
 using System.Text;
+using System.Threading;
+using System.Threading.Tasks;
 using DiscordRPC;
+using Gml.Client.Interfaces;
 using Gml.Client.Models;
 using Gml.Domains.Launcher;
 using Gml.Dto.Files;
@@ -20,7 +28,7 @@ using Gml.Web.Api.Domains.System;
 using GmlCore.Interfaces.Storage;
 using GmlCore.Interfaces.User;
 using Newtonsoft.Json;
-using IUser = Gml.Client.Models.IUser;
+using Sentry;
 
 namespace Gml.Client.Helpers;
 
@@ -46,7 +54,12 @@ public class ApiProcedures
         _osType = osType;
 
         _httpClient.DefaultRequestHeaders.UserAgent.ParseAdd(
-            $"Gml.Launcher-Client-{nameof(GmlClientManager)}/1.0 (OS: {Environment.OSVersion};)");
+            $"Gml.Launcher-Client-{nameof(GmlClientManager)}/1.0 " +
+            $"(OS: {RuntimeInformation.OSDescription.Replace(";", ",")}; " +
+            $"OSArchitecture: {RuntimeInformation.OSArchitecture}; " +
+            $"ProcessArchitecture: {RuntimeInformation.ProcessArchitecture}; " +
+            $"FrameworkDescription: {RuntimeInformation.FrameworkDescription.Replace(";", ",")}; " +
+            $".NET: {Environment.Version.ToString(3)};)");
     }
 
     public IObservable<int> ProgressChanged => _progressChanged;
@@ -207,7 +220,7 @@ public class ApiProcedures
         Debug.WriteLine("Calling GetStartProcess()");
 #endif
         // var profilePath = installationDirectory + @"\clients\" + profileDto.ProfileName;
-        var profilePath = Path.Combine(installationDirectory, "clients", profileDto.ProfileName);
+        var profilePath = Path.Combine(installationDirectory, profileDto.ReleativePath);
 
         Dictionary<string, string> parameters;
 
@@ -275,7 +288,7 @@ public class ApiProcedures
                 var chmodStartInfo = new ProcessStartInfo
                 {
                     FileName = "/bin/bash",
-                    Arguments = $"-c \"chmod +x {startInfoFileName}\""
+                    Arguments = $"-c \"chmod +x '{startInfoFileName}\"'"
                 };
                 Process.Start(chmodStartInfo);
                 break;
@@ -353,7 +366,7 @@ public class ApiProcedures
         return string.Empty;
     }
 
-    public async Task<(IUser User, string Message, IEnumerable<string> Details)> Auth(string accessToken)
+    public async Task<(ILauncherUser User, string Message, IEnumerable<string> Details)> Auth(string accessToken)
     {
 #if DEBUG
         Debug.WriteLine("Calling Auth(string accessToken)");
@@ -363,7 +376,7 @@ public class ApiProcedures
             AccessToken = accessToken
         });
 
-        var authUser = new AuthUser();
+        var authUser = new AuthLauncherUser();
 
         var data = new StringContent(model, Encoding.UTF8, "application/json");
         var response = await _httpClient.PostAsync("/api/v1/integrations/auth/checkToken", data).ConfigureAwait(false);
@@ -400,7 +413,7 @@ public class ApiProcedures
         return (authUser, dto?.Message ?? string.Empty, dto?.Errors ?? []);
     }
 
-    public async Task<(IUser User, string Message, IEnumerable<string> Details)> AuthWith2Fa(string login, string password,
+    public async Task<(ILauncherUser User, string Message, IEnumerable<string> Details)> AuthWith2Fa(string login, string password,
         string hwid, string twoFactorCode)
     {
 #if DEBUG
@@ -414,7 +427,7 @@ public class ApiProcedures
             AccessToken = string.Empty
         });
 
-        var authUser = new AuthUser
+        var authUser = new AuthLauncherUser
         {
             Name = login
         };
@@ -472,7 +485,7 @@ public class ApiProcedures
         // Исполнение всех задач.
         await Task.WhenAll(tasks);
 #if DEBUG
-        Debug.WriteLine("All files downloaded.");
+        //Debug.WriteLine("All files downloaded.");
 #endif
     }
 
@@ -576,7 +589,7 @@ public class ApiProcedures
             _progressChanged.OnNext(_progress);
             _loadedFilesCount.OnNext(_finishedFilesCount);
 #if DEBUG
-            Debug.WriteLine($"{_finishedFilesCount}/{_progressFilesCount} files downloaded [{file.Directory}].");
+            //Debug.WriteLine($"{_finishedFilesCount}/{_progressFilesCount} files downloaded [{file.Directory}].");
 #endif
         }
         catch (IOException ex)

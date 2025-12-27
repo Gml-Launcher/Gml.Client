@@ -1,5 +1,7 @@
 using System.Diagnostics;
+using Gml.Client.Interfaces;
 using Gml.Web.Api.Domains.System;
+using GmlCore.Interfaces.Enums;
 
 namespace Gml.Client.Tests;
 
@@ -19,7 +21,7 @@ public class Tests
         var localDirectory = Environment.CurrentDirectory;
         var baseAddress = "https://gmlb.recloud.tech";
 
-        Client = new GmlClientManager(localDirectory, baseAddress, "GmlLauncher", OsType.Linux);
+        Client = new GmlClientManager(localDirectory, baseAddress, new GameLoader(), "GmlLauncher", OsType.Linux);
 
         Client.ProgressChanged.Subscribe(percentage =>
         {

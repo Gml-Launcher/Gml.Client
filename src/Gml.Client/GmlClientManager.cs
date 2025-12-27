@@ -1,3 +1,5 @@
+using System;
+using System.Collections.Generic;
 using Gml.Client.Extensions;
 using Gml.Client.Helpers;
 using Gml.Web.Api.Domains.System;
@@ -6,15 +8,22 @@ using GmlCore.Interfaces.User;
 using Newtonsoft.Json;
 using System.ComponentModel;
 using System.Diagnostics;
+using System.IO;
+using System.Linq;
+using System.Net.Http;
+using System.Net.NetworkInformation;
 using System.Reactive.Subjects;
 using System.Runtime.InteropServices;
+using System.Threading;
+using System.Threading.Tasks;
+using Gml.Client.Interfaces;
 using Gml.Dto.Files;
 using Gml.Dto.Messages;
 using Gml.Dto.Mods;
 using Gml.Dto.News;
 using Gml.Dto.Profile;
 using Gml.Dto.Servers;
-using IUser = Gml.Client.Models.IUser;
+using Sentry;
 
 namespace Gml.Client;
 
@@ -33,18 +42,20 @@ public class GmlClientManager : IGmlClientManager
     private IDisposable? _profilesChangedEvent;
     private SystemIoProcedures _systemProcedures;
 
-    public GmlClientManager(string installationDirectory, string gateWay, string projectName, OsType osType)
+    public GmlClientManager(string installationDirectory, string gateWay, IGameLoader gameLoader, string projectName,
+        OsType osType)
     {
         InstallationDirectory = installationDirectory;
-
-        var hostUri = new Uri(gateWay);
+        Gameloader = gameLoader;
+        Gameloader.Manager = this;
+        HostUri = new Uri(gateWay);
 
         _osType = osType;
         _systemProcedures = new SystemIoProcedures(installationDirectory, osType);
         _offlineProfilesDirectory = Path.Combine(InstallationDirectory, "offline-mode");
         _apiProcedures = new ApiProcedures(new HttpClient
         {
-            BaseAddress = hostUri
+            BaseAddress = HostUri
         }, osType);
 
         _apiProcedures.ProgressChanged.Subscribe(_progressChanged);
@@ -53,11 +64,14 @@ public class GmlClientManager : IGmlClientManager
 
         ProjectName = projectName;
 
-        if (hostUri.Scheme == Uri.UriSchemeHttps)
-            _webSocketAddress = "wss://" + hostUri.Host + (hostUri.IsDefaultPort ? "" : ":" + hostUri.Port);
-        else if (hostUri.Scheme == Uri.UriSchemeHttp)
-            _webSocketAddress = "ws://" + hostUri.Host + (hostUri.IsDefaultPort ? "" : ":" + hostUri.Port);
+        if (HostUri.Scheme == Uri.UriSchemeHttps)
+            _webSocketAddress = "wss://" + HostUri.Host + (HostUri.IsDefaultPort ? "" : ":" + HostUri.Port);
+        else if (HostUri.Scheme == Uri.UriSchemeHttp)
+            _webSocketAddress = "ws://" + HostUri.Host + (HostUri.IsDefaultPort ? "" : ":" + HostUri.Port);
     }
+
+    public Uri HostUri { get; set; }
+    public IGameLoader Gameloader { get; }
 
     IObservable<int> IGmlClientManager.ProgressChanged => _progressChanged;
     public IObservable<bool> ProfilesChanges => _profilesChanged;
@@ -167,8 +181,9 @@ public class GmlClientManager : IGmlClientManager
     {
         var version = versionInfo.ActualVersion?.Version ?? "1.0.0.0";
         var fileName = $"{Path.GetFileName(originalFileName)}-{version}{Path.GetExtension(originalFileName)}";
+        var installDirectory = new DirectoryInfo(InstallationDirectory);
 
-        var tempFile = new FileInfo(Path.Combine(Path.GetTempPath(), version, fileName));
+        var tempFile = new FileInfo(Path.Combine(Path.GetTempPath(), installDirectory.Name, version, fileName));
 
         if (tempFile.Exists)
         {
@@ -261,13 +276,13 @@ public class GmlClientManager : IGmlClientManager
         await _apiProcedures.DownloadFiles(InstallationDirectory, profileInfo.ToArray(), 60, cancellationToken);
     }
 
-    public Task<(IUser User, string Message, IEnumerable<string> Details)> Auth(string login, string password,
+    public Task<(ILauncherUser User, string Message, IEnumerable<string> Details)> Auth(string login, string password,
         string hwid)
     {
         return AuthWith2Fa(login, password, hwid, string.Empty);
     }
 
-    public async Task<(IUser User, string Message, IEnumerable<string> Details)> AuthWith2Fa(string login, string password,
+    public async Task<(ILauncherUser User, string Message, IEnumerable<string> Details)> AuthWith2Fa(string login, string password,
         string hwid, string twoFactorCode)
     {
         var user = await _apiProcedures.AuthWith2Fa(login, password, hwid, twoFactorCode);
@@ -286,7 +301,7 @@ public class GmlClientManager : IGmlClientManager
         return _apiProcedures.GetTexturesByName(userName);
     }
 
-    public async Task<(IUser User, string Message, IEnumerable<string> Details)> Auth(string accessToken)
+    public async Task<(ILauncherUser User, string Message, IEnumerable<string> Details)> Auth(string accessToken)
     {
         var user = await _apiProcedures.Auth(accessToken);
 
@@ -300,7 +315,7 @@ public class GmlClientManager : IGmlClientManager
         return user;
     }
 
-    public async Task OpenServerConnection(IUser user)
+    public async Task OpenServerConnection(ILauncherUser launcherUser)
     {
         _profilesChangedEvent?.Dispose();
         if (_launchBackendConnection is not null)
@@ -310,7 +325,7 @@ public class GmlClientManager : IGmlClientManager
             _profilesChangedEvent = null;
         }
 
-        _launchBackendConnection = new SignalRConnect($"{_webSocketAddress}/ws/launcher", user);
+        _launchBackendConnection = new SignalRConnect($"{_webSocketAddress}/ws/launcher", launcherUser);
         _profilesChangedEvent ??= _launchBackendConnection.ProfilesChanges.Subscribe(_profilesChanged);
         await _launchBackendConnection.BuildAndConnect();
     }
@@ -355,5 +370,36 @@ public class GmlClientManager : IGmlClientManager
     public static Task<bool> CheckApiAsync(string hostUrl)
     {
         return ApiProcedures.CheckBackend(hostUrl);
+    }
+
+    public static string CheckApiStatus(params string[] hosts)
+    {
+        foreach (var host in hosts)
+        {
+            try
+            {
+                var ping = new Ping();
+                var uri = new Uri(host);
+                var reply = ping.Send(uri.Host, 1000);
+
+                if (reply is not null && reply.Status == IPStatus.Success && CheckApiAsync(host).Result)
+                {
+                    return host;
+                }
+            }
+            catch (AggregateException exception)
+            {
+                if (exception.InnerException is HttpRequestException)
+                {
+                    Console.WriteLine($"Host {host} is not available");
+                }
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e);
+            }
+        }
+
+        return hosts.First();
     }
 }
