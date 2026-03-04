@@ -36,6 +36,7 @@ public interface IGmlClientManager : IDisposable
     Task<(ILauncherUser User, string Message, IEnumerable<string> Details)> AuthWith2Fa(string login, string password, string hwid, string twoFactorCode);
 
     Task ClearFiles(ProfileReadInfoDto profile);
+    Task RemoveProfileFiles(ProfileReadInfoDto profile);
     Task LoadDiscordRpc();
     Task UpdateDiscordRpcState(string state);
     Task<IVersionFile?> GetActualVersion(OsType osType, Architecture osArch);

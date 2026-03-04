@@ -160,6 +160,21 @@ public class GmlClientManager : IGmlClientManager
         }
     }
 
+    public Task RemoveProfileFiles(ProfileReadInfoDto profile)
+    {
+        return Task.Run(() =>
+        {
+            var profilePath =
+                Path.GetFullPath(Path.Combine(InstallationDirectory, profile.ReleativePath));
+
+            if (Directory.Exists(profilePath))
+            {
+                Directory.Delete(profilePath, true);
+            }
+
+        });
+    }
+
     public Task LoadDiscordRpc()
     {
         return _apiProcedures.LoadDiscordRpc();
