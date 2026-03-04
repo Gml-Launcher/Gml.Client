@@ -561,7 +561,7 @@ public class ApiProcedures
 
             var url = $"{_httpClient.BaseAddress.AbsoluteUri}api/v1/file/{file.Hash}";
 
-            await using (var fs = new FileStream(localPath, FileMode.OpenOrCreate))
+            await using (var fs = new FileStream(localPath, FileMode.Create))
             {
                 using (var response = await _httpClient.GetAsync(url, HttpCompletionOption.ResponseHeadersRead, cancellationToken))
                 {
