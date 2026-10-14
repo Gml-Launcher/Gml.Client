@@ -13,7 +13,7 @@
     <PackageReference Include="Gml.Dto" Version="2025.3.3-alpha4" />
     <PackageReference Include="Microsoft.AspNetCore.SignalR.Client" Version="8.0.21" />
     <PackageReference Include="Newtonsoft.Json" Version="13.0.4" />
-    <PackageReference Include="Sentry" Version="5.13.0" />
+    <PackageReference Include="Sentry" Version="6.12.1" />
     <PackageReference Include="System.Reactive" Version="6.0.1"/>
     <PackageReference Include="System.Threading.Tasks" Version="4.3.0" />
   </ItemGroup>
