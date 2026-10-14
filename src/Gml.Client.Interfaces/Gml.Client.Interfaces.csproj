@@ -9,7 +9,7 @@
     </PropertyGroup>
 
     <ItemGroup>
-      <PackageReference Include="Gml.Dto" Version="2025.3.3-alpha4" />
+      <PackageReference Include="Gml.Dto" Version="2025.3.3.2" />
     </ItemGroup>
 
 
